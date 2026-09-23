@@ -20,9 +20,7 @@ log = logging.getLogger(__name__)
 
 _SENT_RE = re.compile(r"(?<!\b\d)(?<!\b\d\d)(?<!\b[a-zA-Z])(?<=[.!?])\s+")
 
-_CONVERTERS: Dict[str, DocumentConverter] = {
-    ".docx": convert_to_pdf,
-}
+_CONVERTERS: Dict[str, DocumentConverter] = {}
 
 
 def split_sentences(text: str) -> List[str]:
@@ -51,7 +49,10 @@ def chunk_doc(doc: Dict[str, Any], model: str) -> List[dict]:
         }
 
     def header() -> str:
-        return ".\n".join([p for p in path if p])
+        valid_path = [p for p in path if p]
+        if not valid_path:
+            return ""
+        return " > ".join(valid_path) + ".\n"
 
     def flush() -> None:
         nonlocal current_chunk

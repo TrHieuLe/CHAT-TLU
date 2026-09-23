@@ -95,6 +95,16 @@ class LocalStorageService:
         except Exception:
             return None
 
+    def delete_v2(self, path: Path | str) -> bool:
+        try:
+            full_path = self.upload_dir / path
+            if full_path.is_file():
+                full_path.unlink()
+                return True
+        except Exception:
+            pass
+        return False
+
 
 _storage = LocalStorageService()
 

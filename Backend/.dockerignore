@@ -1,0 +1,16 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.coverage
+tests/
+qdrant_storage/
+*.tar.gz
+*.sql
+app*.db
+test*.db
+.env
+.env.*

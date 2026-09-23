@@ -1,11 +1,15 @@
 import asyncio
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from qdrant_client.http.models import Filter, FieldCondition, MatchValue, models
 
 from app.core.config import settings
-from app.rag import embedder
+
+try:
+    from app.rag import embedder
+except ImportError:
+    embedder = None
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +30,13 @@ class Retriever:
     async def retrieve_v3(self, query: str, bot_id: int = 0):
         logger.info("Embedding query for retrieval...")
 
+        current_embedder = embedder
+        if current_embedder is None:
+            from app.rag import embedder as current_embedder
+
         try:
-            # FIX: Chạy tác vụ sinh embedding đồng bộ trên một luồng (thread) riêng 
-            # để không làm block event loop của FastAPI
             loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(None, embedder.get_embeddings, [query])
+            result = await loop.run_in_executor(None, current_embedder.get_embeddings, [query])
             dense_, sparse_ = result
         except Exception as e:
             logger.exception("Embedding failed: %s", e)
@@ -53,13 +59,15 @@ class Retriever:
                 must=[FieldCondition(key="bot_id", match=MatchValue(value=bot_id))]
             )
 
-        top_k = getattr(settings, "TOP_K", 5)
+        candidates_k = getattr(settings, "RETRIEVE_CANDIDATES_K", 12)
+        top_k = getattr(settings, "TOP_K", 4)
         score_threshold = getattr(settings, "SCORE_THRESHOLD", None)
         collection_name = getattr(settings, "QDRANT_COLLECTION", None) or getattr(settings, "COLLECTION_NAME")
 
+        raw_points = []
         try:
             if self.async_client:
-                logger.info("Async hybrid retrieval (dense+sparse)")
+                logger.info("Async hybrid retrieval (dense+sparse) - fetching %d candidates", candidates_k)
 
                 prefetch = [
                     models.Prefetch(
@@ -89,29 +97,53 @@ class Retriever:
                     prefetch=prefetch,
                     query=models.FusionQuery(fusion=models.Fusion.RRF),
                     with_payload=True,
-                    limit=top_k,
+                    limit=candidates_k,
                     query_filter=filter_obj,
                 )
-                return getattr(result, "points", [])
+                raw_points = getattr(result, "points", []) or []
 
-            logger.info("Sync dense retrieval (fallback)")
-            sync_client = getattr(self.client, "client", self.client)
+            else:
+                logger.info("Sync dense retrieval (fallback) - fetching %d candidates", candidates_k)
+                sync_client = getattr(self.client, "client", self.client)
 
-            def _sync_query():
-                return sync_client.query_points(
-                    collection_name=collection_name,
-                    query=dense_query,
-                    using="dense",
-                    with_payload=True,
-                    limit=top_k,
-                    query_filter=filter_obj,
-                    score_threshold=score_threshold,
-                )
+                def _sync_query():
+                    return sync_client.query_points(
+                        collection_name=collection_name,
+                        query=dense_query,
+                        using="dense",
+                        with_payload=True,
+                        limit=candidates_k,
+                        query_filter=filter_obj,
+                        score_threshold=score_threshold,
+                    )
 
-            loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(None, _sync_query)
-            return getattr(result, "points", [])
+                loop = asyncio.get_running_loop()
+                result = await loop.run_in_executor(None, _sync_query)
+                raw_points = getattr(result, "points", []) or []
 
         except Exception as e:
             logger.exception("Qdrant search failed: %s", e)
             return []
+
+        if not raw_points:
+            return []
+
+        # Tầng Reranker (Cross-Encoder)
+        try:
+            from app.rag.reranker import get_reranker
+            reranker = get_reranker()
+            loop = asyncio.get_running_loop()
+            scored_candidates = await loop.run_in_executor(
+                None, reranker.rerank, query, raw_points, top_k
+            )
+
+            final_points = []
+            for point, score in scored_candidates:
+                if point.payload is not None and isinstance(point.payload, dict):
+                    point.payload["rerank_score"] = round(score, 4)
+                final_points.append(point)
+
+            return final_points
+        except Exception as e:
+            logger.warning("Reranker failed, returning top Qdrant results: %s", e)
+            return raw_points[:top_k]

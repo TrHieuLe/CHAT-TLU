@@ -8,7 +8,7 @@ from pathlib import Path
 from app.core.config import settings
 from app.models.database import init_db
 from app.rag.qdrant_client_custom import qdrant_client
-from app.routers import chat, sessions, document
+from app.routers import chat, sessions, document, memory, crawler
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
@@ -36,10 +36,24 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="NCKH StudyBot API v3.1", version="3.1.0", lifespan=lifespan)
 
+cors_origins_env = os.getenv("CORS_ORIGINS", "")
+if cors_origins_env:
+    cors_origins = [o.strip() for o in cors_origins_env.split(",") if o.strip()]
+else:
+    cors_origins = [
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
-    allow_credentials=True, allow_methods=["*"], allow_headers=["*"],
+    allow_origins=cors_origins,
+    allow_origin_regex=os.getenv("CORS_ORIGIN_REGEX", r"https?://.*"),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Serve ảnh tại /images/*
@@ -48,6 +62,8 @@ app.mount("/images", StaticFiles(directory=str(IMG_DIR)), name="images")
 app.include_router(chat.router)
 app.include_router(sessions.router)
 app.include_router(document.router)
+app.include_router(memory.router)
+app.include_router(crawler.router)
 
 
 @app.get("/")

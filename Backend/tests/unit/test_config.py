@@ -14,7 +14,8 @@ from app.core.config import Settings
 class TestSettings:
     """Kiểm tra cấu hình mặc định và validation."""
 
-    def test_defaults(self):
+    def test_defaults(self, monkeypatch):
+        monkeypatch.delenv("GEMINI_MODEL", raising=False)
         s = Settings(
             GEMINI_API_KEY="test-key",
             _env_file=None,  # Không đọc .env

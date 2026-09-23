@@ -1,0 +1,68 @@
+version: "3.8"
+
+services:
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: studybot_qdrant
+    restart: unless-stopped
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    networks:
+      - studybot-net
+
+  backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: studybot_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-2.5-flash}
+      - QDRANT_URL=http://qdrant:6333
+      - COLLECTION_NAME=${COLLECTION_NAME:-nckh_docs}
+      - DATABASE_URL=sqlite+aiosqlite:///./app.db
+      - RERANKER_TYPE=cross_encoder
+      - RERANKER_MODEL=BAAI/bge-reranker-base
+      - CANDIDATES_K=12
+      - RETRIEVAL_TOP_K=4
+      - MIN_RELEVANCE_SCORE=0.15
+    volumes:
+      - ./Backend/data:/app/data
+      - ./Backend/app.db:/app/app.db
+      - hf_cache:/root/.cache/huggingface
+    depends_on:
+      - qdrant
+    networks:
+      - studybot-net
+
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+    container_name: studybot_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-}
+    depends_on:
+      - backend
+    networks:
+      - studybot-net
+
+volumes:
+  qdrant_data:
+    driver: local
+  hf_cache:
+    driver: local
+
+networks:
+  studybot-net:
+    driver: bridge

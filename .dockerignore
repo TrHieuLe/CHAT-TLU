@@ -1,0 +1,13 @@
+.git/
+.gitignore
+Backend/venv/
+Frontend/node_modules/
+Frontend/.next/
+Backend/__pycache__/
+Backend/.pytest_cache/
+Backend/qdrant_storage/
+Backend/*.tar.gz
+Backend/*.sql
+*.db
+.env
+cloudflared.exe

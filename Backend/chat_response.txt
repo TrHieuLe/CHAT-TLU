@@ -1,0 +1,6 @@
+data: [SOURCES]["QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf", "introduce.txt", "QD_1038_16.07.2021_GDTC.docx"]
+data: "Xin chào! Tôi là StudyBot — trợ lý nghiên cứu khoa học AI dành"
+data: " cho sinh viên đại học Việt Nam. Tôi có thể hỗ trợ bạn tìm kiếm thông tin, giải đáp thắc mắc và đồng"
+data: " hành cùng bạn trong quá trình học tập và nghiên cứu khoa học. \n\nHôm nay tôi có thể giúp gì"
+data: " cho bạn?"
+data: [DONE]

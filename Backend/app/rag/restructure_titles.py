@@ -76,6 +76,27 @@ def _partition_file(file_path: Path):
         return partition_html(filename=str(file_path))
     if file_ext == ".txt":
         return partition_text(filename=str(file_path))
+    if file_ext == ".pdf":
+        try:
+            return partition(filename=str(file_path), strategy="fast")
+        except Exception:
+            import pdfplumber
+            from unstructured.documents.elements import Title, NarrativeText
+            elements = []
+            with pdfplumber.open(file_path) as pdf:
+                for page_idx, page in enumerate(pdf.pages, 1):
+                    text = page.extract_text() or ""
+                    for line in text.split("\n"):
+                        line = line.strip()
+                        if not line:
+                            continue
+                        if len(line) < 100 and (_extract_heading_level(line) is not None or line.isupper()):
+                            elem = Title(text=line)
+                        else:
+                            elem = NarrativeText(text=line)
+                        elem.metadata.page_number = page_idx
+                        elements.append(elem)
+            return elements
 
     return partition(filename=str(file_path))
 
@@ -114,6 +135,15 @@ def _extract_heading_level(text: str) -> int | None:
 
     if lower.startswith(("mục ", "muc ")):
         return 2
+
+    if re.match(r"^(điều|dieu)\s+(\d+|[ivxlcdm]+)", lower):
+        return 2
+
+    if re.match(r"^(khoản|khoan)\s+\d+", lower):
+        return 3
+
+    if re.match(r"^(điểm|diem)\s+[a-z]", lower) or re.match(r"^[a-z]\)\s+", lower):
+        return 4
 
     m_roman = re.match(r"^([ivxlcdm]+)[\.\)]\s+", lower)
     if m_roman and _roman_to_int(m_roman.group(1)) > 0:

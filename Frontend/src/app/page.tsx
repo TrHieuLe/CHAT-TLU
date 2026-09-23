@@ -2,9 +2,19 @@
 
 import React, { useRef, useEffect, useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useChat } from '@/hooks/useChat';
 import MessageBubble from '@/components/chat/MessageBubble';
 import ChatInput from '@/components/chat/ChatInput';
+import DocPreviewModal from '@/components/chat/DocPreviewModal';
+import {
+  createSession,
+  getSessions,
+  getHistory,
+  deleteSession,
+  renameSession,
+  getSessionExportUrl,
+} from '@/lib/api';
 import {
   Plus,
   MessageSquare,
@@ -14,6 +24,11 @@ import {
   Loader2,
   PanelLeft,
   Trash2,
+  Edit2,
+  Check,
+  X,
+  Download,
+  Database,
 } from 'lucide-react';
 
 const SUGGESTIONS = [
@@ -23,8 +38,6 @@ const SUGGESTIONS = [
   'Hướng dẫn cách kết nối Wifi của trường?',
 ];
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
-
 type HistoryItem = {
   id: string;
   title?: string;
@@ -32,7 +45,7 @@ type HistoryItem = {
 
 export default function Home() {
   const [sessionId, setSessionId] = useState('');
-  const { messages, send, sendImage, loading, clear, load } = useChat(sessionId);
+  const { messages, send, sendImage, regenerate, loading, clear, load } = useChat(sessionId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -41,6 +54,14 @@ export default function Home() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [chatHistory, setChatHistory] = useState<HistoryItem[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [previewDoc, setPreviewDoc] = useState<{ isOpen: boolean; url: string; title: string }>({
+    isOpen: false,
+    url: '',
+    title: '',
+  });
 
   useEffect(() => {
     handleNewChat();
@@ -58,11 +79,8 @@ export default function Home() {
 
   const fetchSessions = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/sessions/`);
-      if (res.ok) {
-        const data = await res.json();
-        setChatHistory(data);
-      }
+      const data = await getSessions();
+      setChatHistory(data);
     } catch (error) {
       console.error('Không thể kết nối đến Backend để lấy lịch sử:', error);
     }
@@ -73,13 +91,8 @@ export default function Home() {
     setIsMobileSidebarOpen(false);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/sessions/`, { method: 'POST' });
-      if (res.ok) {
-        const data = await res.json();
-        setSessionId(data.id);
-      } else {
-        setSessionId('session-' + Math.random().toString(36).substring(7));
-      }
+      const data = await createSession();
+      setSessionId(data.id);
     } catch (error) {
       console.error('Lỗi tạo session:', error);
       setSessionId('session-' + Math.random().toString(36).substring(7));
@@ -94,12 +107,9 @@ export default function Home() {
 
     setIsLoadingHistory(true);
     try {
-      const res = await fetch(`${API_BASE_URL}/sessions/${id}/history`);
-      if (res.ok) {
-        const pastMessages = await res.json();
-        setSessionId(id);
-        load(pastMessages);
-      }
+      const pastMessages = await getHistory(id);
+      setSessionId(id);
+      load(pastMessages);
     } catch (error) {
       console.error('Lỗi khi lấy tin nhắn:', error);
     } finally {
@@ -115,14 +125,7 @@ export default function Home() {
 
     setDeletingId(id);
     try {
-      const res = await fetch(`${API_BASE_URL}/sessions/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        throw new Error('Xóa cuộc trò chuyện thất bại');
-      }
-
+      await deleteSession(id);
       if (id === sessionId) {
         await handleNewChat();
       } else {
@@ -134,6 +137,39 @@ export default function Home() {
     } finally {
       setDeletingId(null);
     }
+  };
+
+  const handleStartRename = (id: string, currentTitle: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(id);
+    setEditTitle(currentTitle || '');
+  };
+
+  const handleSaveRename = async (id: string, e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const cleanTitle = editTitle.trim();
+    if (!cleanTitle) {
+      setEditingId(null);
+      return;
+    }
+    try {
+      await renameSession(id, cleanTitle);
+      setChatHistory((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, title: cleanTitle } : c))
+      );
+    } catch (error) {
+      console.error('Lỗi khi đổi tên cuộc trò chuyện:', error);
+    } finally {
+      setEditingId(null);
+    }
+  };
+
+  const handlePreviewDoc = (url: string, title: string) => {
+    setPreviewDoc({
+      isOpen: true,
+      url,
+      title,
+    });
   };
 
   const handleSuggestionClick = (text: string) => {
@@ -223,22 +259,75 @@ export default function Home() {
                   }`}
                 />
 
-                <span className="text-sm truncate flex-1 font-medium">
-                  {chat.title || 'Trò chuyện mới'}
-                </span>
+                {editingId === chat.id ? (
+                  <form
+                    onSubmit={(e) => handleSaveRename(chat.id, e)}
+                    className="flex-1 flex items-center gap-1 min-w-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      autoFocus
+                      className="w-full text-xs px-2 py-1 border border-blue-400 rounded-md bg-white text-slate-800 outline-none"
+                    />
+                    <button
+                      type="submit"
+                      className="p-1 text-emerald-600 hover:bg-emerald-50 rounded"
+                      title="Lưu"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="p-1 text-slate-400 hover:bg-slate-100 rounded"
+                      title="Hủy"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </form>
+                ) : (
+                  <>
+                    <span className="text-sm truncate flex-1 font-medium">
+                      {chat.title || 'Trò chuyện mới'}
+                    </span>
 
-                <button
-                  onClick={(e) => handleDeleteChat(chat.id, e)}
-                  disabled={deletingId === chat.id}
-                  title="Xóa cuộc trò chuyện"
-                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded-lg hover:bg-red-50 text-slate-400 hover:text-red-500 disabled:opacity-50"
-                >
-                  {deletingId === chat.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="w-4 h-4" />
-                  )}
-                </button>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        onClick={(e) => handleStartRename(chat.id, chat.title || '', e)}
+                        title="Đổi tên cuộc trò chuyện"
+                        className="p-1 rounded-md hover:bg-blue-100/60 text-slate-400 hover:text-blue-600 transition-colors"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+
+                      <a
+                        href={getSessionExportUrl(chat.id, 'markdown')}
+                        download
+                        onClick={(e) => e.stopPropagation()}
+                        title="Tải về cuộc trò chuyện (.md)"
+                        className="p-1 rounded-md hover:bg-emerald-50 text-slate-400 hover:text-emerald-600 transition-colors"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                      </a>
+
+                      <button
+                        onClick={(e) => handleDeleteChat(chat.id, e)}
+                        disabled={deletingId === chat.id}
+                        title="Xóa cuộc trò chuyện"
+                        className="p-1 rounded-md hover:bg-red-50 text-slate-400 hover:text-red-500 disabled:opacity-50 transition-colors"
+                      >
+                        {deletingId === chat.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ))
           )}
@@ -293,13 +382,24 @@ export default function Home() {
             </div>
           </div>
 
-          <button
-            onClick={handleNewChat}
-            className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
-          >
-            <Plus className="w-4 h-4" />
-            Đoạn chat mới
-          </button>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm font-semibold text-slate-600 hover:text-blue-600 hover:border-blue-200 hover:bg-blue-50 transition-colors"
+              title="Trang quản trị tài liệu"
+            >
+              <Database className="w-4 h-4 text-blue-500" />
+              <span className="hidden sm:inline">Quản trị tri thức</span>
+            </Link>
+
+            <button
+              onClick={handleNewChat}
+              className="inline-flex items-center gap-2 rounded-xl border border-blue-600 bg-blue-600 px-3.5 py-2 text-xs sm:text-sm font-semibold text-white hover:bg-blue-700 shadow-sm transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Đoạn chat mới</span>
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:px-24 xl:px-48 scroll-smooth">
@@ -363,7 +463,14 @@ export default function Home() {
                         msg.role === 'user' ? 'justify-end' : 'justify-start'
                       }`}
                     >
-                      <MessageBubble msg={msg} />
+                      <MessageBubble
+                        msg={msg}
+                        sessionId={sessionId}
+                        isLast={isLast}
+                        onRegenerate={regenerate}
+                        onSuggestionClick={handleSuggestionClick}
+                        onPreviewDocument={handlePreviewDoc}
+                      />
                     </div>
 
                     {showThinkingAfterThis && renderThinkingBubble()}
@@ -387,6 +494,13 @@ export default function Home() {
           </div>
         </footer>
       </div>
+
+      <DocPreviewModal
+        isOpen={previewDoc.isOpen}
+        onClose={() => setPreviewDoc(prev => ({ ...prev, isOpen: false }))}
+        title={previewDoc.title}
+        docUrl={previewDoc.url}
+      />
     </div>
   );
 }

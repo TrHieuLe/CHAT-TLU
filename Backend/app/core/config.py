@@ -42,5 +42,12 @@ class Settings(BaseSettings):
     TEMPERATURE: float = 0.7
     MAX_OUTPUT_TOKENS: int = 4096
 
+    # Reranking & Retrieval Optimization
+    ENABLE_RERANKER: bool = True
+    RERANKER_MODEL: str = "BAAI/bge-reranker-base"
+    RETRIEVE_CANDIDATES_K: int = 12
+    TOP_K: int = 4
+    MIN_RELEVANCE_SCORE: float = 0.15
+
 
 settings = Settings()

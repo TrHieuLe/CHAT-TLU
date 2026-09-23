@@ -34,3 +34,6 @@ class StorageHelper:
 
     def download_v2(self, path: Path | str):
         return self.storage.download_v2(path=path)
+
+    def delete_v2(self, path: Path | str) -> bool:
+        return self.storage.delete_v2(path=path)

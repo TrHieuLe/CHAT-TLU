@@ -48,6 +48,7 @@ class Session(Base):
     __tablename__ = "sessions"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True)
+    user_id: Mapped[str] = mapped_column(String(64), default="default_user", index=True)
     title: Mapped[str] = mapped_column(String(255), default="Cuộc trò chuyện mới")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -58,6 +59,26 @@ class Session(Base):
         default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc),
     )
+
+
+class UserMemory(Base):
+    __tablename__ = "user_memories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(String(64), index=True)
+    key: Mapped[str] = mapped_column(String(100))
+    value: Mapped[str] = mapped_column(Text)
+    confidence: Mapped[float] = mapped_column(default=1.0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+        onupdate=lambda: datetime.now(timezone.utc),
+    )
+
 
 
 class ChatMessage(Base):
@@ -74,9 +95,29 @@ class ChatMessage(Base):
     )
 
 
+class ChatMessageFeedback(Base):
+    __tablename__ = "chat_feedbacks"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    session_id: Mapped[str] = mapped_column(String(36))
+    message_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    rating: Mapped[str] = mapped_column(String(20))  # "like" hoặc "dislike"
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+
+
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        try:
+            await conn.exec_driver_sql(
+                "ALTER TABLE sessions ADD COLUMN user_id VARCHAR(64) DEFAULT 'default_user'"
+            )
+        except Exception:
+            pass  # Cột user_id đã tồn tại
 
 
 async def get_db():

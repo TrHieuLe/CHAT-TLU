@@ -15,6 +15,18 @@ class QdrantClientCustom:
             prefer_grpc=False,
         )
 
+    def _ensure_payload_indexes(self) -> None:
+        for field in ["doc_name", "doc_id"]:
+            try:
+                self.client.create_payload_index(
+                    collection_name=self.collection_name,
+                    field_name=field,
+                    field_schema=models.PayloadSchemaType.KEYWORD,
+                )
+                log.info("Đã tạo payload index cho: %s", field)
+            except Exception:
+                pass
+
     def recreate_collection(self, vector_size: int):
         """
         Xóa collection cũ và tạo lại đúng schema hybrid:
@@ -39,6 +51,7 @@ class QdrantClientCustom:
                 "sparse": models.SparseVectorParams()
             },
         )
+        self._ensure_payload_indexes()
         log.info("Đã tạo lại collection hybrid: %s", self.collection_name)
 
     def create_collection(self, vector_size: int):
@@ -51,6 +64,7 @@ class QdrantClientCustom:
 
         if self.collection_name in names:
             log.info("Collection đã tồn tại: %s", self.collection_name)
+            self._ensure_payload_indexes()
             return
 
         self.client.create_collection(
@@ -65,6 +79,7 @@ class QdrantClientCustom:
                 "sparse": models.SparseVectorParams()
             },
         )
+        self._ensure_payload_indexes()
         log.info("Đã tạo collection mới: %s", self.collection_name)
 
     def delete_collection(self):

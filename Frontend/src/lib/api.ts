@@ -1,4 +1,4 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+export const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
 export interface ChatSession {
   id: string;
@@ -31,6 +31,8 @@ export function toAbsoluteApiUrl(path: string) {
   return `${API_BASE}/${path}`;
 }
 
+import { getUserId } from "./user";
+
 export function trimDocumentExtension(filename: string) {
   return filename.trim().replace(/\s*\.[^.]+$/, "").trim();
 }
@@ -41,25 +43,74 @@ export function buildDocumentReferenceUrl(sourceName: string) {
 }
 
 export async function createSession(): Promise<ChatSession> {
-  const r = await fetch(`${API_BASE}/api/sessions/`, { method: "POST" });
+  const r = await fetch(`${API_BASE}/api/sessions/`, {
+    method: "POST",
+    headers: { "X-User-ID": getUserId() },
+  });
   if (!r.ok) throw new Error("Không tạo được session");
   return r.json();
 }
 
 export async function getSessions(): Promise<ChatSession[]> {
-  const r = await fetch(`${API_BASE}/api/sessions/`);
+  const r = await fetch(`${API_BASE}/api/sessions/`, {
+    headers: { "X-User-ID": getUserId() },
+  });
   if (!r.ok) return [];
   return r.json();
 }
 
 export async function getHistory(sid: string) {
-  const r = await fetch(`${API_BASE}/api/sessions/${sid}/history`);
+  const r = await fetch(`${API_BASE}/api/sessions/${sid}/history`, {
+    headers: { "X-User-ID": getUserId() },
+  });
   if (!r.ok) return [];
   return r.json();
 }
 
 export async function deleteSession(sid: string) {
-  await fetch(`${API_BASE}/api/sessions/${sid}`, { method: "DELETE" });
+  await fetch(`${API_BASE}/api/sessions/${sid}`, {
+    method: "DELETE",
+    headers: { "X-User-ID": getUserId() },
+  });
+}
+
+export async function renameSession(sid: string, title: string): Promise<{ id: string; title: string }> {
+  const r = await fetch(`${API_BASE}/api/sessions/${sid}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-ID": getUserId(),
+    },
+    body: JSON.stringify({ title }),
+  });
+  if (!r.ok) throw new Error("Không đổi tên được session");
+  return r.json();
+}
+
+export function getSessionExportUrl(sid: string, format: "markdown" | "json" = "markdown") {
+  return `${API_BASE}/api/sessions/${sid}/export?format=${format}&user_id=${encodeURIComponent(getUserId())}`;
+}
+
+export async function sendFeedback(
+  sessionId: string,
+  rating: "like" | "dislike",
+  messageId?: number,
+  comment?: string
+) {
+  const r = await fetch(`${API_BASE}/api/chat/feedback`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-User-ID": getUserId(),
+    },
+    body: JSON.stringify({
+      session_id: sessionId,
+      message_id: messageId,
+      rating,
+      comment,
+    }),
+  });
+  return r.ok;
 }
 
 export async function uploadImage(
@@ -74,6 +125,7 @@ export async function uploadImage(
 
   const r = await fetch(`${API_BASE}/api/chat/image`, {
     method: "POST",
+    headers: { "X-User-ID": getUserId() },
     body: form,
   });
 
@@ -98,7 +150,10 @@ export async function streamChat(
   try {
     r = await fetch(`${API_BASE}/api/chat/stream`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "X-User-ID": getUserId(),
+      },
       body: JSON.stringify({ session_id: sessionId, question }),
     });
   } catch {
@@ -163,3 +218,122 @@ export async function streamChat(
 
   onDone();
 }
+
+import type { DocumentItem, DocumentStats, UserMemoryItem, CrawlerStatus } from "./types";
+
+export async function getDocuments(): Promise<DocumentItem[]> {
+  try {
+    const r = await fetch(`${API_BASE}/api/document/list`);
+    if (!r.ok) return [];
+    return await r.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function getDocumentStats(): Promise<DocumentStats | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/document/stats`);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function uploadDocument(file: File): Promise<{ ok: boolean; message?: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("auto", "true");
+
+  try {
+    const r = await fetch(`${API_BASE}/api/document/upload`, {
+      method: "POST",
+      body: form,
+    });
+    if (!r.ok) {
+      const text = await r.text().catch(() => "");
+      return { ok: false, message: text || `Lỗi tải lên (${r.status})` };
+    }
+    return { ok: true };
+  } catch (err: any) {
+    return { ok: false, message: err?.message || "Lỗi kết nối máy chủ" };
+  }
+}
+
+export async function deleteDocument(docId: string): Promise<boolean> {
+  try {
+    const r = await fetch(`${API_BASE}/api/document/${docId}`, {
+      method: "DELETE",
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function getUserMemories(): Promise<UserMemoryItem[]> {
+  try {
+    const r = await fetch(`${API_BASE}/api/memory/`, {
+      headers: { "X-User-ID": getUserId() },
+    });
+    if (!r.ok) return [];
+    return await r.json();
+  } catch {
+    return [];
+  }
+}
+
+export async function deleteUserMemory(key: string): Promise<boolean> {
+  try {
+    const r = await fetch(`${API_BASE}/api/memory/${encodeURIComponent(key)}`, {
+      method: "DELETE",
+      headers: { "X-User-ID": getUserId() },
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function clearAllUserMemories(): Promise<boolean> {
+  try {
+    const r = await fetch(`${API_BASE}/api/memory/`, {
+      method: "DELETE",
+      headers: { "X-User-ID": getUserId() },
+    });
+    return r.ok;
+  } catch {
+    return false;
+  }
+}
+
+export async function triggerCrawler(maxArticles: number = 5): Promise<{
+  ok: boolean;
+  message?: string;
+  crawled_count?: number;
+  articles?: any[];
+}> {
+  try {
+    const r = await fetch(`${API_BASE}/api/crawler/run`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ max_articles: maxArticles }),
+    });
+    return await r.json();
+  } catch (err: any) {
+    return { ok: false, message: err?.message || "Lỗi kết nối máy chủ khi cào dữ liệu" };
+  }
+}
+
+export async function getCrawlerStatus(): Promise<CrawlerStatus | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/crawler/status`);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
+

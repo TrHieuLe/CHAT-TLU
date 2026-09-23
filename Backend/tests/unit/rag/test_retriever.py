@@ -80,7 +80,12 @@ class TestRetrieverRetrieveV3:
 
         r = Retriever(client=MagicMock(), async_client=mock_async)
 
-        with patch("app.rag.retriever.embedder") as mock_emb:
+        with patch("app.rag.retriever.embedder") as mock_emb, \
+             patch("app.rag.reranker.get_reranker") as mock_get_reranker:
+            mock_reranker = MagicMock()
+            mock_reranker.rerank.side_effect = lambda q, pts, top_k: [(p, 0.95) for p in pts[:top_k]]
+            mock_get_reranker.return_value = mock_reranker
+
             dense = [[0.1] * 1024]
             sparse = [{"1": 0.5, "2": 0.3}]
             mock_emb.get_embeddings.return_value = (dense, sparse)
@@ -88,6 +93,7 @@ class TestRetrieverRetrieveV3:
             result = await r.retrieve_v3("test query")
             assert len(result) == 1
             assert result[0].payload["content"] == "test content"
+            assert result[0].payload["rerank_score"] == 0.95
 
     async def test_sync_fallback(self):
         """Khi không có async_client → dùng sync client."""

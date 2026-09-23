@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Sora, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import "katex/dist/katex.min.css";
 const sora = Sora({ subsets:["latin"], variable:"--font-body", display:"swap" });
 const mono = JetBrains_Mono({ subsets:["latin"], variable:"--font-mono", display:"swap" });
 export const metadata: Metadata = {

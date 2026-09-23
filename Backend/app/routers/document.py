@@ -51,30 +51,112 @@ async def upload_document(
 
     full_path = storage_helper.upload_v2(filename, file)
     if not full_path:
-        raise HTTPException(500, "Đã có lỗi xảy ra, vui lòng thử lại sau")
+        raise HTTPException(500, "Đã có lỗi xảy ra khi lưu file, vui lòng thử lại sau")
 
     logger.info("Start ingest document")
+    file_size = full_path.stat().st_size if full_path.exists() else 0
+    file_type = full_path.suffix.lower().replace(".", "")
 
     doc = Document(
         id=str(uuid.uuid4()),
         filename=full_path.stem.strip(),
-        original_name=full_path.name, # tên file có đuôi
-        file_type="",
-        file_size=0,
-        # status="ok"
+        original_name=full_path.name,
+        file_type=file_type,
+        file_size=file_size,
+        status="processing",
     )
 
-    doc.chunk_count = ingest_file(file_path=full_path, doc_id=doc.id, auto=auto)
-    doc.status = "ok"
+    try:
+        doc.chunk_count = ingest_file(file_path=full_path, doc_id=doc.id, auto=auto)
+        doc.status = "ok"
+    except Exception as e:
+        logger.error(f"Lỗi khi ingest file {filename}: {e}", exc_info=True)
+        doc.status = "error"
+        doc.error_msg = str(e)
 
-    logger.info("Ingest document finished")
+    logger.info("Ingest document finished with status %s", doc.status)
 
     db.add(doc)
     await db.commit()
+    await db.refresh(doc)
 
     return {
         "id": doc.id,
         "filename": doc.filename,
+        "original_name": doc.original_name,
+        "file_type": doc.file_type,
+        "file_size": doc.file_size,
+        "chunk_count": doc.chunk_count,
+        "status": doc.status,
+    }
+
+
+@router.get("/list", tags=["document"])
+async def list_documents(db: AsyncSession = Depends(get_db)):
+    """Lấy danh sách tất cả tài liệu đã được tải lên và index."""
+    res = await db.execute(
+        select(Document).order_by(Document.created_at.desc())
+    )
+    documents = res.scalars().all()
+    return [
+        {
+            "id": doc.id,
+            "filename": doc.filename,
+            "original_name": doc.original_name,
+            "file_type": doc.file_type,
+            "file_size": doc.file_size,
+            "chunk_count": doc.chunk_count or 0,
+            "status": doc.status,
+            "created_at": doc.created_at.isoformat() if doc.created_at else None,
+        }
+        for doc in documents
+    ]
+
+
+@router.delete("/{doc_id}", tags=["document"])
+async def delete_document(doc_id: str, db: AsyncSession = Depends(get_db)):
+    """Xóa tài liệu khỏi cơ sở dữ liệu, vector store Qdrant và bộ lưu trữ file."""
+    doc = await db.get(Document, doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Không tìm thấy tài liệu")
+
+    # Xóa khỏi Qdrant theo doc_name
+    from ingest import delete_doc_by_name
+    try:
+        delete_doc_by_name(doc.original_name)
+        if doc.filename != doc.original_name:
+            delete_doc_by_name(doc.filename)
+    except Exception as e:
+        logger.warning("Không thể xóa vector Qdrant cho %s: %s", doc.original_name, e)
+
+    # Xóa file vật lý khỏi storage
+    try:
+        storage_helper.delete_v2(doc.original_name)
+    except Exception as e:
+        logger.warning("Không thể xóa file vật lý %s: %s", doc.original_name, e)
+
+    await db.delete(doc)
+    await db.commit()
+
+    return {"ok": True, "message": f"Đã xóa tài liệu {doc.original_name} thành công"}
+
+
+@router.get("/stats", tags=["document"])
+async def get_document_stats(db: AsyncSession = Depends(get_db)):
+    """Lấy thống kê tổng quan về tài liệu và chunks."""
+    from sqlalchemy import func
+    res = await db.execute(
+        select(
+            func.count(Document.id),
+            func.coalesce(func.sum(Document.chunk_count), 0),
+        )
+    )
+    total_docs, total_chunks = res.first() or (0, 0)
+
+    return {
+        "total_documents": total_docs,
+        "total_chunks": total_chunks,
+        "collection_name": settings.COLLECTION_NAME,
     }
 
 

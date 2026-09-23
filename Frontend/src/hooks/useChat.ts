@@ -137,13 +137,88 @@ export function useChat(sessionId: string) {
     [sessionId, finishLastModel]
   );
 
+  const regenerate = useCallback(async () => {
+    if (loading || messages.length === 0 || !sessionId) return;
+    let lastUserPrompt = "";
+    let lastUserIndex = -1;
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].role === "user") {
+        lastUserPrompt = messages[i].content;
+        lastUserIndex = i;
+        break;
+      }
+    }
+    if (!lastUserPrompt || lastUserIndex === -1) return;
+
+    setError("");
+    setLoading(true);
+
+    const historyUpToUser = messages.slice(0, lastUserIndex + 1);
+    setMessages([
+      ...historyUpToUser,
+      { role: "model", content: "", isStreaming: true, sources: [], images: [] },
+    ]);
+
+    try {
+      await streamChat(
+        sessionId,
+        lastUserPrompt,
+        (text) => {
+          setMessages((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last && last.role === "model") {
+              last.content += text;
+            }
+            return next;
+          });
+        },
+        (sources) => {
+          setMessages((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last && last.role === "model") {
+              last.sources = sources;
+            }
+            return next;
+          });
+        },
+        () => {
+          finishLastModel();
+          setLoading(false);
+        },
+        (err) => {
+          setError(err);
+          finishLastModel();
+          setLoading(false);
+        },
+        (images) => {
+          setMessages((prev) => {
+            const next = [...prev];
+            const last = next[next.length - 1];
+            if (last && last.role === "model") {
+              last.images = images;
+            }
+            return next;
+          });
+        }
+      );
+    } catch (e) {
+      console.error(e);
+      setError("Không thể tạo lại câu trả lời.");
+      finishLastModel();
+      setLoading(false);
+    }
+  }, [loading, messages, sessionId, finishLastModel]);
+
   return {
     messages,
     loading,
     error,
     send,
     sendImage,
+    regenerate,
     load,
     clear,
   };
-}
+}

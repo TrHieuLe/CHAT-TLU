@@ -2,12 +2,25 @@
 
 import { useMemo, useState } from "react";
 import { Message } from "@/lib/types";
-import { buildDocumentReferenceUrl, toAbsoluteApiUrl } from "@/lib/api";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { Prism as SHL } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
-import { BookOpen, ExternalLink, Image as ImageIcon } from "lucide-react";
+import {
+  BookOpen,
+  ExternalLink,
+  Image as ImageIcon,
+  Copy,
+  Check,
+  ThumbsUp,
+  ThumbsDown,
+  RotateCcw,
+  Sparkles,
+  Eye,
+} from "lucide-react";
+import { buildDocumentReferenceUrl, sendFeedback, toAbsoluteApiUrl } from "@/lib/api";
 import clsx from "clsx";
 
 type NormalizedSource = {
@@ -16,10 +29,33 @@ type NormalizedSource = {
   href: string;
 };
 
-export default function MessageBubble({ msg }: { msg: Message }) {
+interface MessageBubbleProps {
+  msg: Message;
+  sessionId?: string;
+  isLast?: boolean;
+  onRegenerate?: () => void;
+  onSuggestionClick?: (text: string) => void;
+  onPreviewDocument?: (url: string, title: string) => void;
+}
+
+export default function MessageBubble({
+  msg,
+  sessionId,
+  isLast,
+  onRegenerate,
+  onSuggestionClick,
+  onPreviewDocument,
+}: MessageBubbleProps) {
   const isUser = msg.role === "user";
+  const [copied, setCopied] = useState(false);
+  const [feedback, setFeedback] = useState<"like" | "dislike" | null>(null);
 
   const sources = useMemo(() => normalizeSources(msg.sources ?? []), [msg.sources]);
+
+  const followups = useMemo(() => {
+    if (isUser || msg.isStreaming || !msg.content || !isLast) return [];
+    return getSmartFollowups(msg.content);
+  }, [isUser, msg.isStreaming, msg.content, isLast]);
 
   const imageUrls = useMemo(() => {
     if (!msg.images || msg.images.length === 0) return [];
@@ -31,6 +67,24 @@ export default function MessageBubble({ msg }: { msg: Message }) {
       })
       .filter(Boolean);
   }, [msg.images]);
+
+  const handleCopy = async () => {
+    if (!msg.content) return;
+    try {
+      await navigator.clipboard.writeText(msg.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleFeedback = async (rating: "like" | "dislike") => {
+    if (feedback === rating || !sessionId) return;
+    setFeedback(rating);
+    const numId = typeof msg.id === "number" ? msg.id : (msg.id ? parseInt(String(msg.id), 10) : undefined);
+    await sendFeedback(sessionId, rating, Number.isFinite(numId) ? numId : undefined);
+  };
 
   return (
     <div
@@ -131,12 +185,12 @@ export default function MessageBubble({ msg }: { msg: Message }) {
 
             <ul className="space-y-1.5">
               {sources.map((source) => (
-                <li key={source.key}>
+                <li key={source.key} className="flex items-center justify-between gap-2">
                   <a
                     href={source.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group inline-flex items-start gap-2 text-xs text-slate-600 transition-colors hover:text-blue-700"
+                    className="group inline-flex items-start gap-2 text-xs text-slate-600 transition-colors hover:text-blue-700 min-w-0"
                     title={`Mở tài liệu ${source.title}`}
                   >
                     <span className="break-all italic underline decoration-slate-300 underline-offset-2 group-hover:decoration-blue-500">
@@ -144,14 +198,140 @@ export default function MessageBubble({ msg }: { msg: Message }) {
                     </span>
                     <ExternalLink className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
                   </a>
+
+                  {onPreviewDocument && (
+                    <button
+                      onClick={() => onPreviewDocument(source.href, source.title)}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-md transition-colors flex-shrink-0 border border-blue-200 bg-white"
+                      title="Xem nhanh trong trang"
+                    >
+                      <Eye className="w-3 h-3" />
+                      <span>Xem trước</span>
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
           </div>
         )}
+
+        {/* --- THANH CÔNG CỤ TƯƠNG TÁC BOT (ACTION TOOLBAR) --- */}
+        {!isUser && !msg.isStreaming && msg.content && (
+          <div className="flex items-center gap-1 mt-1 px-1">
+            <button
+              onClick={handleCopy}
+              className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 p-1.5 rounded-lg transition-colors"
+              title="Sao chép câu trả lời"
+            >
+              {copied ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-600 text-[11px] font-medium">Đã chép</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline text-[11px]">Sao chép</span>
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={() => handleFeedback("like")}
+              className={clsx(
+                "p-1.5 rounded-lg text-xs transition-colors",
+                feedback === "like"
+                  ? "text-emerald-600 bg-emerald-50"
+                  : "text-slate-400 hover:text-emerald-600 hover:bg-slate-200/60"
+              )}
+              title="Câu trả lời hữu ích"
+            >
+              <ThumbsUp className="w-3.5 h-3.5" />
+            </button>
+
+            <button
+              onClick={() => handleFeedback("dislike")}
+              className={clsx(
+                "p-1.5 rounded-lg text-xs transition-colors",
+                feedback === "dislike"
+                  ? "text-rose-600 bg-rose-50"
+                  : "text-slate-400 hover:text-rose-600 hover:bg-slate-200/60"
+              )}
+              title="Câu trả lời chưa chính xác"
+            >
+              <ThumbsDown className="w-3.5 h-3.5" />
+            </button>
+
+            {isLast && onRegenerate && (
+              <button
+                onClick={onRegenerate}
+                className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors ml-1"
+                title="Tạo lại câu trả lời"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline text-[11px]">Tạo lại</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* --- GỢI Ý CÂU HỎI TIẾP THEO (FOLLOW-UP CHIPS) --- */}
+        {followups.length > 0 && onSuggestionClick && (
+          <div className="mt-3 space-y-1.5 animate-fade-up">
+            <div className="flex items-center gap-1 text-xs text-slate-400 font-medium px-1">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>Gợi ý câu hỏi liên quan:</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {followups.map((chip, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => onSuggestionClick(chip)}
+                  className="text-xs text-left bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-300 transition-all shadow-xs group flex items-center gap-1.5"
+                >
+                  <span>{chip}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function getSmartFollowups(content: string): string[] {
+  if (!content) return [];
+  const lower = content.toLowerCase();
+  const suggestions: string[] = [];
+
+  if (lower.includes("học bổng") || lower.includes("khuyến khích")) {
+    suggestions.push("Học bổng loại Xuất sắc cần điều kiện gì?", "Điểm rèn luyện tối thiểu xét học bổng?");
+  }
+  if (lower.includes("thi lại") || lower.includes("học lại") || lower.includes("cải thiện")) {
+    suggestions.push("Cách tính điểm học phần khi học cải thiện?", "Học phí khi đăng ký học lại tính như thế nào?");
+  }
+  if (lower.includes("điểm chuẩn") || lower.includes("tuyển sinh") || lower.includes("ngành")) {
+    suggestions.push("Hồ sơ đăng ký xét tuyển đại học gồm những gì?", "Học phí dự kiến các ngành năm nay?");
+  }
+  if (lower.includes("tiếng anh") || lower.includes("toeic") || lower.includes("chuẩn đầu ra")) {
+    suggestions.push("Bảng quy đổi chứng chỉ TOEIC sang chuẩn đầu ra?", "Thời hạn nộp chứng chỉ để xét tốt nghiệp?");
+  }
+  if (lower.includes("học phí") || lower.includes("tín chỉ") || lower.includes("thanh toán")) {
+    suggestions.push("Thời hạn nộp học phí học kỳ này?", "Cách thanh toán học phí qua tài khoản ngân hàng?");
+  }
+  if (lower.includes("cảnh báo") || lower.includes("thôi học") || lower.includes("xếp loại")) {
+    suggestions.push("Bao nhiêu điểm CPA thì bị cảnh báo học vụ?", "Điều kiện để được xét tốt nghiệp ra trường?");
+  }
+
+  if (suggestions.length === 0) {
+    suggestions.push(
+      "Quy chế thi lại và học lại của trường?",
+      "Chuẩn đầu ra Tiếng Anh quy định như thế nào?"
+    );
+  }
+
+  return suggestions.slice(0, 2);
 }
 
 // ==========================================
@@ -219,7 +399,8 @@ function MD({ content }: { content: string }) {
 
   return (
     <ReactMarkdown
-      remarkPlugins={[remarkGfm]}
+      remarkPlugins={[remarkGfm, remarkMath]}
+      rehypePlugins={[rehypeKatex]}
       components={{
         code({ inline, className, children, ...props }: any) {
           const match = /language-(\w+)/.exec(className || "");
