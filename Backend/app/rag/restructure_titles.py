@@ -108,6 +108,25 @@ def _partition_file(file_path: Path):
         except Exception as e:
             log.warning("Fallback pdfplumber: %s", e)
 
+    if file_ext in [".docx", ".doc"]:
+        try:
+            import docx
+            doc = docx.Document(file_path)
+            for p in doc.paragraphs:
+                text = p.text.strip()
+                if not text:
+                    continue
+                is_heading = (
+                    (p.style and getattr(p.style, "name", "").startswith(("Heading", "Tiêu đề")))
+                    or (len(text) < 120 and (_extract_heading_level(text) is not None or text.isupper()))
+                )
+                cat = "Title" if is_heading else "NarrativeText"
+                elements.append(SimpleElement(text=text, category=cat, page_number=1))
+            if elements:
+                return elements
+        except Exception as e:
+            log.warning("Fallback python-docx failed for %s: %s", file_path.name, e)
+
     try:
         text = file_path.read_text(encoding="utf-8", errors="ignore")
         for line in text.split("\n"):

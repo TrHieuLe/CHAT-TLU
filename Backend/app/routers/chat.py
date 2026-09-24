@@ -62,7 +62,11 @@ _sync = QdrantClient(**_kw, prefer_grpc=False)
 _async = AsyncQdrantClient(**_kw, prefer_grpc=False)
 _retriever = Retriever(client=_sync, async_client=_async)
 
-genai.configure(api_key=settings.EFFECTIVE_GEMINI_API_KEY)
+try:
+    if settings.GEMINI_API_KEY or settings.GOOGLE_API_KEY:
+        genai.configure(api_key=settings.EFFECTIVE_GEMINI_API_KEY)
+except Exception as e:
+    logger.warning("Chưa cấu hình API Key Gemini hợp lệ khi khởi động: %s", e)
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 UPLOAD_DIR = BASE_DIR / "data" / "images" / "uploads"
