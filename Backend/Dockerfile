@@ -14,12 +14,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     poppler-utils \
     libmagic1 \
+    libgl1 \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-# Cài đặt Python dependencies
-COPY requirements.txt .
+# Cài đặt pip mới nhất và PyTorch CPU trước (chỉ ~180MB thay vì kéo bản CUDA 2.6GB gây tràn RAM)
 RUN pip install --upgrade pip && \
-    pip install -r requirements.txt
+    pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# Cài đặt các Python dependencies còn lại
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
 # Copy toàn bộ mã nguồn backend
 COPY . .
