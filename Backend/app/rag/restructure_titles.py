@@ -3,11 +3,14 @@ import re
 from pathlib import Path
 from typing import Any
 
-from unstructured.documents.elements import ElementType
-from unstructured.partition.auto import partition
-from unstructured.partition.html import partition_html
-from unstructured.partition.md import partition_md
-from unstructured.partition.text import partition_text
+class SimpleElement:
+    """Đối tượng phần tử văn bản tương thích interface của unstructured element."""
+    def __init__(self, text: str = "", category: str = "NarrativeText", page_number: int = 1, elem_id: str = ""):
+        self.text = text
+        self.category = category
+        self.id = elem_id or str(abs(hash(f"{text}::{page_number}")))
+        self.metadata = type("Metadata", (), {"page_number": page_number})()
+
 
 log = logging.getLogger(__name__)
 
@@ -66,23 +69,32 @@ def _clean_text(text: str) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
-#Phân loại đuôi file dựa vào unstructure 
+#Phân loại đuôi file với fallback an toàn
 def _partition_file(file_path: Path):
     file_ext = file_path.suffix.lower()
 
-    if file_ext == ".md":
-        return partition_md(filename=str(file_path))
-    if file_ext in [".html", ".htm"]:
-        return partition_html(filename=str(file_path))
-    if file_ext == ".txt":
-        return partition_text(filename=str(file_path))
+    # Thử dùng thư viện unstructured nếu có trong môi trường
+    try:
+        if file_ext == ".md":
+            from unstructured.partition.md import partition_md
+            return partition_md(filename=str(file_path))
+        if file_ext in [".html", ".htm"]:
+            from unstructured.partition.html import partition_html
+            return partition_html(filename=str(file_path))
+        if file_ext == ".txt":
+            from unstructured.partition.text import partition_text
+            return partition_text(filename=str(file_path))
+        if file_ext == ".pdf":
+            from unstructured.partition.auto import partition
+            return partition(filename=str(file_path), strategy="fast")
+    except Exception:
+        pass
+
+    # Fallback tự nhiên không phụ thuộc vào thư viện bên ngoài
+    elements = []
     if file_ext == ".pdf":
         try:
-            return partition(filename=str(file_path), strategy="fast")
-        except Exception:
             import pdfplumber
-            from unstructured.documents.elements import Title, NarrativeText
-            elements = []
             with pdfplumber.open(file_path) as pdf:
                 for page_idx, page in enumerate(pdf.pages, 1):
                     text = page.extract_text() or ""
@@ -90,15 +102,25 @@ def _partition_file(file_path: Path):
                         line = line.strip()
                         if not line:
                             continue
-                        if len(line) < 100 and (_extract_heading_level(line) is not None or line.isupper()):
-                            elem = Title(text=line)
-                        else:
-                            elem = NarrativeText(text=line)
-                        elem.metadata.page_number = page_idx
-                        elements.append(elem)
+                        cat = "Title" if (len(line) < 100 and (_extract_heading_level(line) is not None or line.isupper())) else "NarrativeText"
+                        elements.append(SimpleElement(text=line, category=cat, page_number=page_idx))
             return elements
+        except Exception as e:
+            log.warning("Fallback pdfplumber: %s", e)
 
-    return partition(filename=str(file_path))
+    try:
+        text = file_path.read_text(encoding="utf-8", errors="ignore")
+        for line in text.split("\n"):
+            line = line.strip()
+            if not line:
+                continue
+            cat = "Title" if (line.startswith("#") or (len(line) < 100 and _extract_heading_level(line) is not None)) else "NarrativeText"
+            clean_l = line.lstrip("#").strip()
+            elements.append(SimpleElement(text=clean_l, category=cat, page_number=1))
+    except Exception as e:
+        log.error("Native fallback read: %s", e)
+
+    return elements
 
 #Xử lý số la mã
 def _roman_to_int(token: str) -> int:
