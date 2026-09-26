@@ -26,6 +26,14 @@ async def lifespan(app: FastAPI):
     await init_db()
 
     try:
+        from app.models.database import AsyncSessionLocal
+        from app.routers.document import sync_local_data_documents
+        async with AsyncSessionLocal() as session:
+            await sync_local_data_documents(session)
+    except Exception as e:
+        logger.warning(f"Không thể tự động đồng bộ tài liệu data/: {e}")
+
+    try:
         qdrant_client.create_collection(vector_size=settings.EMBEDDING_VECTOR_SIZE)
         logger.info("✅ Qdrant collection checked/created")
     except Exception as e:

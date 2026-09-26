@@ -71,80 +71,96 @@ class LLMService:
         """
         temp = temperature if temperature is not None else settings.TEMPERATURE
         max_tokens = max_output_tokens if max_output_tokens is not None else settings.MAX_OUTPUT_TOKENS
-        model_name = settings.GEMINI_MODEL
+
+        model_candidates = [settings.GEMINI_MODEL]
+        for m in ["gemini-flash-lite-latest", "gemini-3.5-flash-lite"]:
+            if m not in model_candidates:
+                model_candidates.append(m)
 
         client = self._get_client()
         if client is not None:
-            try:
-                from google.genai import types
+            from google.genai import types
 
-                # Chuẩn bị contents
-                contents = []
-                for msg in history:
-                    role = "user" if msg.get("role") == "user" else "model"
-                    contents.append(
-                        types.Content(
-                            role=role,
-                            parts=[types.Part.from_text(text=msg.get("content", ""))]
-                        )
-                    )
+            # Chuẩn bị contents
+            contents = []
+            for msg in history:
+                role = "user" if msg.get("role") == "user" else "model"
                 contents.append(
                     types.Content(
-                        role="user",
-                        parts=[types.Part.from_text(text=prompt)]
+                        role=role,
+                        parts=[types.Part.from_text(text=msg.get("content", ""))]
                     )
                 )
-
-                config = types.GenerateContentConfig(
-                    system_instruction=system_instruction,
-                    temperature=temp,
-                    max_output_tokens=max_tokens,
+            contents.append(
+                types.Content(
+                    role="user",
+                    parts=[types.Part.from_text(text=prompt)]
                 )
+            )
 
-                response_stream = await client.aio.models.generate_content_stream(
-                    model=model_name,
-                    contents=contents,
-                    config=config,
-                )
+            config = types.GenerateContentConfig(
+                system_instruction=system_instruction,
+                temperature=temp,
+                max_output_tokens=max_tokens,
+            )
 
-                async for chunk in response_stream:
-                    text_delta = getattr(chunk, "text", "") or ""
-                    if text_delta:
-                        yield text_delta
-                return
-            except Exception as e:
-                logger.warning("google-genai streaming error, falling back to legacy: %s", e)
+            for model_name in model_candidates:
+                try:
+                    response_stream = await client.aio.models.generate_content_stream(
+                        model=model_name,
+                        contents=contents,
+                        config=config,
+                    )
+
+                    has_chunk = False
+                    async for chunk in response_stream:
+                        text_delta = getattr(chunk, "text", "") or ""
+                        if text_delta:
+                            has_chunk = True
+                            yield text_delta
+                    if has_chunk:
+                        return
+                except Exception as e:
+                    logger.warning("google-genai streaming error with %s: %s. Trying fallback model if available...", model_name, e)
 
         # Fallback sang google.generativeai
         legacy = self._get_legacy_genai()
         if legacy is not None:
-            model = legacy.GenerativeModel(
-                model_name=model_name,
-                system_instruction=system_instruction,
-                generation_config=legacy.GenerationConfig(
-                    temperature=temp,
-                    max_output_tokens=max_tokens,
-                ),
-            )
-            chat_s = model.start_chat(
-                history=[
-                    {"role": m["role"], "parts": [{"text": m["content"]}]}
-                    for m in history
-                ]
-            )
-            stream = await chat_s.send_message_async(prompt, stream=True)
-            async for chunk in stream:
-                txt = getattr(chunk, "text", None)
-                if not txt:
-                    candidates = getattr(chunk, "candidates", None) or []
-                    for cand in candidates:
-                        parts = getattr(getattr(cand, "content", None), "parts", None) or []
-                        for part in parts:
-                            p_txt = getattr(part, "text", None)
-                            if p_txt:
-                                txt = (txt or "") + p_txt
-                if txt:
-                    yield txt
+            for model_name in model_candidates:
+                try:
+                    model = legacy.GenerativeModel(
+                        model_name=model_name,
+                        system_instruction=system_instruction,
+                        generation_config=legacy.GenerationConfig(
+                            temperature=temp,
+                            max_output_tokens=max_tokens,
+                        ),
+                    )
+                    chat_s = model.start_chat(
+                        history=[
+                            {"role": m["role"], "parts": [{"text": m["content"]}]}
+                            for m in history
+                        ]
+                    )
+                    stream = await chat_s.send_message_async(prompt, stream=True)
+                    has_chunk = False
+                    async for chunk in stream:
+                        txt = getattr(chunk, "text", None)
+                        if not txt:
+                            candidates = getattr(chunk, "candidates", None) or []
+                            for cand in candidates:
+                                parts = getattr(getattr(cand, "content", None), "parts", None) or []
+                                for part in parts:
+                                    p_txt = getattr(part, "text", None)
+                                    if p_txt:
+                                        txt = (txt or "") + p_txt
+                        if txt:
+                            has_chunk = True
+                            yield txt
+                    if has_chunk:
+                        return
+                except Exception as e:
+                    logger.warning("Legacy genai error with %s: %s", model_name, e)
 
     async def generate_image_answer(
         self,
@@ -214,24 +230,29 @@ class LLMService:
         )
 
         client = self._get_client()
-        model_name = settings.GEMINI_MODEL
+        model_candidates = [settings.GEMINI_MODEL]
+        for m in ["gemini-flash-lite-latest", "gemini-3.5-flash-lite"]:
+            if m not in model_candidates:
+                model_candidates.append(m)
+
         if client is not None:
-            try:
-                from google.genai import types
-                res = await client.aio.models.generate_content(
-                    model=model_name,
-                    contents=prompt,
-                    config=types.GenerateContentConfig(
-                        temperature=0.3,
-                        max_output_tokens=30,
-                    ),
-                )
-                title = (getattr(res, "text", None) or "").strip()
-                title = re.sub(r'^["\'\s]+|["\'\s\.]+$', '', title)
-                if title and len(title) <= 80:
-                    return title
-            except Exception as e:
-                logger.debug("AI title generation error: %s", e)
+            from google.genai import types
+            for model_name in model_candidates:
+                try:
+                    res = await client.aio.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=types.GenerateContentConfig(
+                            temperature=0.3,
+                            max_output_tokens=30,
+                        ),
+                    )
+                    title = (getattr(res, "text", None) or "").strip()
+                    title = re.sub(r'^["\'\s]+|["\'\s\.]+$', '', title)
+                    if title and len(title) <= 80:
+                        return title
+                except Exception as e:
+                    logger.debug("AI title generation error with %s: %s", model_name, e)
 
         # Fallback thô nếu AI thất bại
         short = cleaned_q[:50].strip()

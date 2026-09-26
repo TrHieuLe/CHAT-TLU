@@ -5,7 +5,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     GEMINI_API_KEY: str | None = None
     GOOGLE_API_KEY: str | None = None
-    GEMINI_MODEL: str = "gemini-flash-latest"
+    GEMINI_MODEL: str = "gemini-flash-lite-latest"
 
     DATABASE_URL: str = "sqlite+aiosqlite:///./app.db"
 
@@ -43,9 +43,10 @@ class Settings(BaseSettings):
     MAX_OUTPUT_TOKENS: int = 4096
 
     # Reranking & Retrieval Optimization
-    ENABLE_RERANKER: bool = True
+    # Default False trên CPU để RAG phản hồi tức thì (<0.5s thay vì mất 35s chạy CrossEncoder trên CPU)
+    ENABLE_RERANKER: bool = False
     RERANKER_MODEL: str = "BAAI/bge-reranker-base"
-    RETRIEVE_CANDIDATES_K: int = 12
+    RETRIEVE_CANDIDATES_K: int = 8
     TOP_K: int = 4
     MIN_RELEVANCE_SCORE: float = 0.15
 

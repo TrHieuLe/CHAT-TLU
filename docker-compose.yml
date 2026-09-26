@@ -22,13 +22,14 @@ services:
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
-      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-flash-latest}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-flash-lite-latest}
+      - ENABLE_RERANKER=${ENABLE_RERANKER:-false}
       - QDRANT_URL=http://qdrant:6333
       - COLLECTION_NAME=${COLLECTION_NAME:-nckh_docs}
       - DATABASE_URL=sqlite+aiosqlite:///./app.db
       - RERANKER_TYPE=cross_encoder
       - RERANKER_MODEL=BAAI/bge-reranker-base
-      - CANDIDATES_K=12
+      - CANDIDATES_K=8
       - RETRIEVAL_TOP_K=4
       - MIN_RELEVANCE_SCORE=0.15
     volumes:

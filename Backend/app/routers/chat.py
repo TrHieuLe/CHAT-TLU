@@ -212,6 +212,7 @@ async def _stream_text_answer(
                 has_table_context = False
                 logger.info("Follow-up self-contained — skipping RAG retrieval")
             else:
+                yield "data: [STATUS]Đang tìm kiếm tài liệu quy chế...\n\n"
                 try:
                     chunks = await _retriever.retrieve_v3(enhanced_question, bot_id=0)
                     if not isinstance(chunks, list):
@@ -307,6 +308,8 @@ async def _stream_text_answer(
             trimmed_history = trim_history_by_token_budget(history, HISTORY_TOKEN_BUDGET)
             user_context = await get_user_cell_state_prompt(user_id, db)
             instruction = f"{SYSTEM_INSTRUCTION}\n\n{user_context}" if user_context else SYSTEM_INSTRUCTION
+
+            yield "data: [STATUS]Đang tổng hợp câu trả lời...\n\n"
 
             full = ""
             try:

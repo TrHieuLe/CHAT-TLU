@@ -38,8 +38,26 @@ export function trimDocumentExtension(filename: string) {
 }
 
 export function buildDocumentReferenceUrl(sourceName: string) {
-  const filename = trimDocumentExtension(sourceName);
+  const filename = sourceName.trim();
   return `${API_BASE}/api/document/reference/${encodeURIComponent(filename)}`;
+}
+
+export interface DocumentTextPreview {
+  ok: boolean;
+  filename: string;
+  file_type: string;
+  file_size: number;
+  content: string;
+}
+
+export async function getDocumentTextPreview(filename: string): Promise<DocumentTextPreview | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/document/preview-text/${encodeURIComponent(filename.trim())}`);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
 }
 
 export async function createSession(): Promise<ChatSession> {
@@ -144,7 +162,8 @@ export async function streamChat(
   onSources: (s: ChatSource[]) => void,
   onDone: () => void,
   onError: (e: string) => void,
-  onImages?: (urls: string[]) => void
+  onImages?: (urls: string[]) => void,
+  onStatus?: (status: string) => void
 ) {
   let r: Response;
   try {
@@ -188,6 +207,12 @@ export async function streamChat(
       if (data === "[DONE]") {
         onDone();
         return;
+      }
+
+      if (data.startsWith("[STATUS]")) {
+        const statusText = data.slice(8).trim();
+        if (onStatus && statusText) onStatus(statusText);
+        continue;
       }
 
       if (data.startsWith("[SOURCES]")) {

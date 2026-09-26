@@ -1,11 +1,12 @@
 import logging
 import mimetypes
+import urllib.parse
 import uuid
 from pathlib import Path
 
 import google.generativeai as genai
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Form
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, FileResponse
 from pydantic import BaseModel
 from qdrant_client import AsyncQdrantClient, QdrantClient
 from sqlalchemy import select
@@ -164,36 +165,203 @@ async def get_document_stats(db: AsyncSession = Depends(get_db)):
     }
 
 
-@router.get("/reference/{filename}")
+@router.get("/reference/{filename:path}")
 async def get_reference(db: AsyncSession = Depends(get_db), *, filename: str):
+    """
+    Phục vụ xem hoặc tải tài liệu tham khảo:
+    1. Tìm trong DB Document table (theo filename hoặc original_name).
+    2. Nếu không thấy hoặc file chưa đăng ký trong DB, quét đệ quy ổ đĩa trong Backend/data.
+    3. Phục vụ với header Content-Disposition: inline và đúng MIME type (PDF, DOCX, TXT, MD...).
+    """
     if not filename:
         raise HTTPException(400, "Tên nguồn tham khảo không được để trống")
 
+    decoded_filename = urllib.parse.unquote(filename).strip()
+    target_path: Path | None = None
+    original_display_name: str = decoded_filename
+
+    # 1. Tra cứu trong SQLite DB trước
     res = await db.execute(
         select(Document)
-        .where(Document.filename == filename)
+        .where(
+            (Document.filename == decoded_filename)
+            | (Document.original_name == decoded_filename)
+            | (Document.filename == Path(decoded_filename).stem)
+        )
         .order_by(Document.created_at.desc())
         .limit(1)
     )
     document = res.scalars().first()
-    if not document or not document.original_name:
-        raise HTTPException(404, "Nguồn tham khảo hiện không thể xem")
+
+    if document and document.original_name:
+        original_display_name = document.original_name
+        target_path = storage_helper.find_file(document.original_name)
+
+    # 2. Nếu DB chưa có hoặc file không ở vị trí cũ, tìm trực tiếp trên ổ đĩa
+    if not target_path or not target_path.is_file():
+        target_path = storage_helper.find_file(decoded_filename)
+        if target_path and target_path.is_file():
+            original_display_name = target_path.name
+
+    if not target_path or not target_path.is_file():
+        logger.warning("Không tìm thấy file nguồn tham khảo: %s", decoded_filename)
+        raise HTTPException(404, f"Nguồn tham khảo '{decoded_filename}' hiện không tồn tại trên hệ thống")
 
     try:
-        content = storage_helper.download_v2(document.original_name)
-        if content is None:
-            raise HTTPException(404, "Nguồn tham khảo hiện không thể xem")
-
-        content_type, _ = mimetypes.guess_type(document.original_name)
+        content_type, _ = mimetypes.guess_type(target_path.name)
         if not content_type:
-            content_type = "application/octet-stream"
+            ext = target_path.suffix.lower()
+            if ext == ".docx":
+                content_type = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            elif ext == ".doc":
+                content_type = "application/msword"
+            elif ext in [".txt", ".md"]:
+                content_type = "text/plain; charset=utf-8"
+            elif ext == ".pdf":
+                content_type = "application/pdf"
+            else:
+                content_type = "application/octet-stream"
 
-        return StreamingResponse(
-            content,
+        encoded_name = urllib.parse.quote(original_display_name)
+        headers = {
+            "Content-Disposition": f"inline; filename*=UTF-8''{encoded_name}",
+            "Access-Control-Allow-Origin": "*",
+        }
+
+        return FileResponse(
+            path=target_path,
             media_type=content_type,
+            headers=headers,
         )
 
     except Exception as e:
-        raise HTTPException(500, "Đã có lỗi xảy ra, vui lòng thử lại sau")
-    finally:
-        await db.close()
+        logger.error("Lỗi khi phục vụ file %s: %s", decoded_filename, e, exc_info=True)
+        raise HTTPException(500, "Đã có lỗi xảy ra khi đọc tệp tin")
+
+
+@router.get("/preview-text/{filename:path}")
+async def get_preview_text(*, filename: str):
+    """
+    Trích xuất và trả về nội dung text của tài liệu để xem nhanh trên giao diện modal.
+    Hỗ trợ .txt, .md, .docx, .pdf.
+    """
+    if not filename:
+        raise HTTPException(400, "Tên tài liệu không được để trống")
+
+    decoded_filename = urllib.parse.unquote(filename).strip()
+    target_path = storage_helper.find_file(decoded_filename)
+
+    if not target_path or not target_path.is_file():
+        raise HTTPException(404, f"Không tìm thấy tài liệu '{decoded_filename}'")
+
+    ext = target_path.suffix.lower()
+    file_size = target_path.stat().st_size
+    text_content = ""
+
+    try:
+        if ext in [".txt", ".md", ".json", ".csv"]:
+            try:
+                text_content = target_path.read_text(encoding="utf-8")
+            except UnicodeDecodeError:
+                text_content = target_path.read_text(encoding="cp1258", errors="ignore")
+
+        elif ext in [".docx", ".doc"]:
+            try:
+                import docx2txt
+                text_content = docx2txt.process(str(target_path)) or ""
+            except Exception:
+                text_content = ""
+
+            if not text_content.strip():
+                try:
+                    import docx
+                    doc = docx.Document(target_path)
+                    paras = [p.text for p in doc.paragraphs if p.text.strip()]
+                    text_content = "\n\n".join(paras)
+                except Exception as e_docx:
+                    logger.warning("python-docx extraction failed: %s", e_docx)
+
+        elif ext == ".pdf":
+            try:
+                import pdfplumber
+                pages_text = []
+                with pdfplumber.open(target_path) as pdf:
+                    for idx, page in enumerate(pdf.pages[:15], 1):  # Giới hạn 15 trang đầu cho preview nhanh
+                        p_text = page.extract_text() or ""
+                        if p_text.strip():
+                            pages_text.append(f"--- Trang {idx} ---\n{p_text}")
+                text_content = "\n\n".join(pages_text)
+            except Exception as e_pdf:
+                logger.warning("pdfplumber preview extraction failed: %s", e_pdf)
+
+        else:
+            text_content = f"Tệp tin định dạng {ext.upper()} ({file_size} bytes). Vui lòng nhấn 'Tải về' để mở trên máy tính."
+
+        return {
+            "ok": True,
+            "filename": target_path.name,
+            "file_type": ext.replace(".", ""),
+            "file_size": file_size,
+            "content": text_content.strip(),
+        }
+
+    except Exception as e:
+        logger.error("Lỗi khi trích xuất text preview cho %s: %s", target_path.name, e)
+        return {
+            "ok": False,
+            "filename": target_path.name,
+            "file_type": ext.replace(".", ""),
+            "file_size": file_size,
+            "content": f"Không thể trích xuất nội dung văn bản tự động: {e}",
+        }
+
+
+async def sync_local_data_documents(db: AsyncSession) -> int:
+    """
+    Quét đệ quy thư mục Backend/data/ và tự động thêm các tài liệu chưa có vào bảng Document.
+    """
+    data_dir = BASE_DIR / "data"
+    if not data_dir.exists():
+        return 0
+
+    added_count = 0
+    supported_exts = {".pdf", ".docx", ".doc", ".txt", ".md"}
+
+    for file_path in data_dir.rglob("*"):
+        if not file_path.is_file():
+            continue
+        if file_path.suffix.lower() not in supported_exts:
+            continue
+        # Bỏ qua thư mục images/uploads
+        if "uploads" in file_path.parts or "images" in file_path.parts:
+            continue
+
+        filename_stem = file_path.stem.strip()
+        original_name = file_path.name
+
+        # Kiểm tra xem đã có trong DB chưa
+        res = await db.execute(
+            select(Document).where(
+                (Document.original_name == original_name) | (Document.filename == filename_stem)
+            )
+        )
+        existing = res.scalars().first()
+
+        if not existing:
+            doc = Document(
+                id=str(uuid.uuid4()),
+                filename=filename_stem,
+                original_name=original_name,
+                file_type=file_path.suffix.lower().replace(".", ""),
+                file_size=file_path.stat().st_size,
+                chunk_count=0,
+                status="ok",
+            )
+            db.add(doc)
+            added_count += 1
+
+    if added_count > 0:
+        await db.commit()
+        logger.info("✅ Đã tự động đồng bộ %d tài liệu từ data/ vào cơ sở dữ liệu", added_count)
+
+    return added_count

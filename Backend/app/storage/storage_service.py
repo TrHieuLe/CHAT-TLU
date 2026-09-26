@@ -85,24 +85,68 @@ class LocalStorageService:
         finally:
             file.file.close()
 
+    def find_file(self, path: Path | str) -> Path | None:
+        """
+        Tìm kiếm file trong upload_dir (Backend/data) và các thư mục con:
+        1. Khớp chính xác tên file hoặc đường dẫn.
+        2. Khớp theo stem (tên không đuôi).
+        3. Khớp không phân biệt hoa thường hoặc khoảng trắng.
+        """
+        query_str = str(path).strip()
+        if not query_str:
+            return None
+
+        # 1. Thử đường dẫn trực tiếp
+        direct = self.upload_dir / query_str
+        if direct.is_file():
+            return direct
+
+        # 2. Thử tìm kiếm trong base_dir (data/storage)
+        storage_direct = self.base_dir / query_str
+        if storage_direct.is_file():
+            return storage_direct
+
+        query_clean = query_str.lower().replace(" ", "").replace("_", "").replace("-", "")
+        query_stem = Path(query_str).stem.lower().replace(" ", "").replace("_", "").replace("-", "")
+
+        # 3. Quét đệ quy trong thư mục data/
+        for candidate in self.upload_dir.rglob("*"):
+            if not candidate.is_file():
+                continue
+            cand_name = candidate.name.lower().replace(" ", "").replace("_", "").replace("-", "")
+            cand_stem = candidate.stem.lower().replace(" ", "").replace("_", "").replace("-", "")
+
+            # Khớp tên đầy đủ
+            if cand_name == query_clean:
+                return candidate
+
+            # Khớp tên gốc (bỏ đuôi)
+            if cand_stem == query_stem:
+                return candidate
+
+            # Khớp một phần nếu query đủ dài (> 6 ký tự)
+            if len(query_stem) >= 6 and (query_stem in cand_stem or cand_stem in query_stem):
+                return candidate
+
+        return None
+
     def download_v2(self, path: Path | str):
-        full_path = self.upload_dir / path
-        if not full_path.is_file():
+        target = self.find_file(path)
+        if not target or not target.is_file():
             return None
         try:
-            file_stream: BinaryIO = open(full_path, 'rb')
-            return file_stream
+            return open(target, 'rb')
         except Exception:
             return None
 
     def delete_v2(self, path: Path | str) -> bool:
-        try:
-            full_path = self.upload_dir / path
-            if full_path.is_file():
-                full_path.unlink()
+        target = self.find_file(path)
+        if target and target.is_file():
+            try:
+                target.unlink()
                 return True
-        except Exception:
-            pass
+            except Exception:
+                pass
         return False
 
 
