@@ -43,8 +43,7 @@ class Settings(BaseSettings):
     MAX_OUTPUT_TOKENS: int = 4096
 
     # Reranking & Retrieval Optimization
-    # Default False trên CPU để RAG phản hồi tức thì (<0.5s thay vì mất 35s chạy CrossEncoder trên CPU)
-    ENABLE_RERANKER: bool = False
+    ENABLE_RERANKER: bool = True
     RERANKER_MODEL: str = "BAAI/bge-reranker-base"
     RETRIEVE_CANDIDATES_K: int = 8
     TOP_K: int = 4

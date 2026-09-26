@@ -20,7 +20,7 @@ class TestSettings:
             GEMINI_API_KEY="test-key",
             _env_file=None,  # Không đọc .env
         )
-        assert s.GEMINI_MODEL == "gemini-2.5-flash"
+        assert s.GEMINI_MODEL == "gemini-flash-lite-latest"
         assert s.CHUNK_SIZE == 800
         assert s.OVERLAP == 100
         assert s.EMBEDDING_VECTOR_SIZE == 1024
