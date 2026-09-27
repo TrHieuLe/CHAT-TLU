@@ -259,27 +259,51 @@ async def get_preview_text(*, filename: str):
     text_content = ""
 
     try:
-        if ext in [".txt", ".md", ".json", ".csv"]:
+        if ext in [".txt", ".md", ".json"]:
             try:
                 text_content = target_path.read_text(encoding="utf-8")
             except UnicodeDecodeError:
                 text_content = target_path.read_text(encoding="cp1258", errors="ignore")
 
+        elif ext in [".xlsx", ".xls", ".csv"]:
+            try:
+                from app.rag.table_extractor import extract_tables_from_excel
+                excel_tables = extract_tables_from_excel(target_path)
+                if excel_tables:
+                    text_content = "\n\n".join(f"### {t.title}\n{t.markdown}" for t in excel_tables)
+                elif ext == ".csv":
+                    try:
+                        text_content = target_path.read_text(encoding="utf-8")
+                    except UnicodeDecodeError:
+                        text_content = target_path.read_text(encoding="cp1258", errors="ignore")
+                else:
+                    text_content = f"Tệp bảng tính {ext.upper()} không có dữ liệu bảng hợp lệ."
+            except Exception as e_xls:
+                logger.warning("Excel preview extraction failed: %s", e_xls)
+                text_content = f"Lỗi đọc bảng tính: {e_xls}"
+
         elif ext in [".docx", ".doc"]:
             try:
-                import docx2txt
-                text_content = docx2txt.process(str(target_path)) or ""
+                import docx
+                doc = docx.Document(target_path)
+                paras = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+                text_content = "\n\n".join(paras)
             except Exception:
-                text_content = ""
-
-            if not text_content.strip():
                 try:
-                    import docx
-                    doc = docx.Document(target_path)
-                    paras = [p.text for p in doc.paragraphs if p.text.strip()]
-                    text_content = "\n\n".join(paras)
-                except Exception as e_docx:
-                    logger.warning("python-docx extraction failed: %s", e_docx)
+                    import docx2txt
+                    text_content = docx2txt.process(str(target_path)) or ""
+                except Exception:
+                    text_content = ""
+
+            # Bổ sung các bảng dữ liệu trích xuất dạng Markdown
+            try:
+                from app.rag.table_extractor import extract_tables_from_docx
+                docx_tables = extract_tables_from_docx(target_path)
+                if docx_tables:
+                    table_mds = "\n\n".join(f"### [Bảng dữ liệu trích xuất]\n{t.markdown}" for t in docx_tables)
+                    text_content = (text_content + "\n\n" + table_mds).strip()
+            except Exception as e_tbl:
+                logger.warning("Bóc tách bảng docx preview lỗi: %s", e_tbl)
 
         elif ext == ".pdf":
             try:
@@ -325,7 +349,7 @@ async def sync_local_data_documents(db: AsyncSession) -> int:
         return 0
 
     added_count = 0
-    supported_exts = {".pdf", ".docx", ".doc", ".txt", ".md"}
+    supported_exts = {".pdf", ".docx", ".doc", ".txt", ".md", ".xlsx", ".xls", ".csv"}
 
     for file_path in data_dir.rglob("*"):
         if not file_path.is_file():

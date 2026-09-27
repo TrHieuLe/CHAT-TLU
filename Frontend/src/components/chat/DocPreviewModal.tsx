@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import {
   X,
   ExternalLink,
@@ -43,10 +45,13 @@ export default function DocPreviewModal({
   const lowerTitle = (title || "").toLowerCase();
   const isPdf = lowerTitle.endsWith(".pdf");
   const isDocx = lowerTitle.endsWith(".docx") || lowerTitle.endsWith(".doc");
+  const isExcel =
+    lowerTitle.endsWith(".xlsx") ||
+    lowerTitle.endsWith(".xls") ||
+    lowerTitle.endsWith(".csv");
   const isText =
     lowerTitle.endsWith(".txt") ||
     lowerTitle.endsWith(".md") ||
-    lowerTitle.endsWith(".csv") ||
     lowerTitle.endsWith(".json");
 
   useEffect(() => {
@@ -62,8 +67,8 @@ export default function DocPreviewModal({
     setLoadError(false);
     setSearchQuery("");
 
-    // Đối với DOCX, TXT, MD hoặc file không phải PDF: Tải nội dung text trích xuất từ server
-    if (isDocx || isText || !isPdf) {
+    // Đối với DOCX, Excel, TXT, MD hoặc file không phải PDF: Tải nội dung text trích xuất từ server
+    if (isDocx || isExcel || isText || !isPdf) {
       getDocumentTextPreview(title)
         .then((data) => {
           if (data && data.ok) {
@@ -78,7 +83,7 @@ export default function DocPreviewModal({
       // Đối với PDF: Loading được quản lý qua sự kiện onLoad của iframe
       setLoading(true);
     }
-  }, [isOpen, title, isPdf, isDocx, isText]);
+  }, [isOpen, title, isPdf, isDocx, isExcel, isText]);
 
   if (!isOpen) return null;
 
@@ -96,6 +101,7 @@ export default function DocPreviewModal({
   const renderFileIcon = () => {
     if (isPdf) return <FileText className="w-5 h-5 text-red-600" />;
     if (isDocx) return <FileText className="w-5 h-5 text-blue-600" />;
+    if (isExcel) return <FileSpreadsheet className="w-5 h-5 text-emerald-600" />;
     if (isText) return <FileCode className="w-5 h-5 text-emerald-600" />;
     return <FileSpreadsheet className="w-5 h-5 text-amber-600" />;
   };
@@ -103,26 +109,10 @@ export default function DocPreviewModal({
   const getFormatBadge = () => {
     if (isPdf) return "Tài liệu PDF";
     if (isDocx) return "Văn bản Word (.docx)";
+    if (isExcel) return "Bảng tính Excel (.xlsx / .csv)";
     if (isText) return "Tệp văn bản (.txt / .md)";
     return "Tài liệu tham khảo";
   };
-
-  // Tách văn bản thành các đoạn và định dạng Điều / Khoản
-  const formattedParagraphs = useMemo(() => {
-    if (!previewData?.content) return [];
-    const lines = previewData.content.split(/\n+/);
-    return lines.map((line, idx) => {
-      const trimmed = line.trim();
-      const isArticleHeader = /^(Điều\s+\d+|Chương\s+[IVXLCDM\d]+|Mục\s+\d+|Phần\s+[IVXLCDM\d]+|QUYẾT ĐỊNH)/i.test(
-        trimmed
-      );
-      return {
-        id: idx,
-        text: trimmed,
-        isArticleHeader,
-      };
-    });
-  }, [previewData?.content]);
 
   // Đếm kết quả tìm kiếm
   const matchCount = useMemo(() => {
@@ -136,10 +126,30 @@ export default function DocPreviewModal({
     }
   }, [searchQuery, previewData?.content]);
 
+  const renderHighlightedNode = (node: React.ReactNode): React.ReactNode => {
+    if (!searchQuery.trim() || typeof node !== "string") return node;
+    try {
+      const parts = node.split(
+        new RegExp(`(${searchQuery.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi")
+      );
+      return parts.map((part, i) =>
+        part.toLowerCase() === searchQuery.trim().toLowerCase() ? (
+          <mark key={i} className="bg-yellow-300 text-slate-900 rounded-xs px-0.5 font-medium">
+            {part}
+          </mark>
+        ) : (
+          part
+        )
+      );
+    } catch {
+      return node;
+    }
+  };
+
   const renderHighlightedText = (text: string) => {
     if (!searchQuery.trim()) return text;
     try {
-      const parts = text.split(new RegExp(`(${searchQuery.trim()})`, "gi"));
+      const parts = text.split(new RegExp(`(${searchQuery.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "gi"));
       return parts.map((part, i) =>
         part.toLowerCase() === searchQuery.trim().toLowerCase() ? (
           <mark key={i} className="bg-yellow-300 text-slate-900 rounded-xs px-0.5 font-medium">
@@ -311,28 +321,81 @@ export default function DocPreviewModal({
                     )}
                   </div>
 
-                  <div className="space-y-3.5">
-                    {formattedParagraphs.map((p) => {
-                      if (!p.text) return null;
-                      if (p.isArticleHeader) {
-                        return (
-                          <div
-                            key={p.id}
-                            className="mt-6 pt-3 pb-1 border-l-4 border-blue-600 pl-3 font-bold text-slate-900 text-base sm:text-lg bg-blue-50/50 rounded-r-lg"
-                          >
-                            {renderHighlightedText(p.text)}
+                  <div className="prose prose-slate max-w-none text-sm sm:text-base leading-relaxed">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ children }) => (
+                          <h1 className="text-xl font-bold text-slate-900 mt-6 mb-3 border-b border-slate-200 pb-2">
+                            {React.Children.map(children, renderHighlightedNode)}
+                          </h1>
+                        ),
+                        h2: ({ children }) => (
+                          <h2 className="text-lg font-bold text-slate-900 mt-5 mb-2 border-l-4 border-blue-600 pl-3 bg-blue-50/50 py-1 rounded-r">
+                            {React.Children.map(children, renderHighlightedNode)}
+                          </h2>
+                        ),
+                        h3: ({ children }) => (
+                          <h3 className="text-base font-semibold text-slate-800 mt-4 mb-2">
+                            {React.Children.map(children, renderHighlightedNode)}
+                          </h3>
+                        ),
+                        p: ({ children }) => {
+                          const textStr =
+                            typeof children === "string"
+                              ? children
+                              : Array.isArray(children) && typeof children[0] === "string"
+                              ? children[0]
+                              : "";
+                          const isArticleHeader =
+                            /^(Điều\s+\d+|Chương\s+[IVXLCDM\d]+|Mục\s+\d+|Phần\s+[IVXLCDM\d]+|QUYẾT ĐỊNH)/i.test(
+                              textStr.trim()
+                            );
+
+                          if (isArticleHeader) {
+                            return (
+                              <div className="mt-6 pt-3 pb-1 border-l-4 border-blue-600 pl-3 font-bold text-slate-900 text-base sm:text-lg bg-blue-50/50 rounded-r-lg mb-3">
+                                {React.Children.map(children, renderHighlightedNode)}
+                              </div>
+                            );
+                          }
+                          return (
+                            <p className="text-slate-700 mb-3 whitespace-pre-wrap font-sans leading-relaxed">
+                              {React.Children.map(children, renderHighlightedNode)}
+                            </p>
+                          );
+                        },
+                        table: ({ children }) => (
+                          <div className="my-5 overflow-x-auto rounded-xl border border-slate-200 shadow-xs bg-white">
+                            <table className="min-w-full divide-y divide-slate-200 text-left text-xs sm:text-sm">
+                              {children}
+                            </table>
                           </div>
-                        );
-                      }
-                      return (
-                        <p
-                          key={p.id}
-                          className="text-sm sm:text-base leading-relaxed text-slate-700 whitespace-pre-wrap font-sans"
-                        >
-                          {renderHighlightedText(p.text)}
-                        </p>
-                      );
-                    })}
+                        ),
+                        thead: ({ children }) => (
+                          <thead className="bg-slate-100 font-semibold text-slate-700 border-b border-slate-200">
+                            {children}
+                          </thead>
+                        ),
+                        th: ({ children }) => (
+                          <th className="px-3.5 py-2.5 font-semibold text-slate-800 border-b border-slate-200 bg-slate-50 whitespace-nowrap">
+                            {React.Children.map(children, renderHighlightedNode)}
+                          </th>
+                        ),
+                        td: ({ children }) => (
+                          <td className="px-3.5 py-2.5 text-slate-600 border-b border-slate-100 align-top">
+                            {React.Children.map(children, renderHighlightedNode)}
+                          </td>
+                        ),
+                        tr: ({ children }) => (
+                          <tr className="hover:bg-blue-50/40 transition-colors odd:bg-white even:bg-slate-50/40">
+                            {children}
+                          </tr>
+                        ),
+                      }}
+                    >
+                      {previewData.content}
+                    </ReactMarkdown>
                   </div>
                 </div>
               ) : (

@@ -21,6 +21,7 @@ import {
   X,
   Globe,
   Sparkles,
+  FileSpreadsheet,
 } from "lucide-react";
 import {
   getDocuments,
@@ -120,8 +121,8 @@ export default function AdminPage() {
 
     // Chỉ nhận định dạng được hỗ trợ
     const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
-    if (![".pdf", ".docx", ".txt", ".md"].includes(ext)) {
-      setUploadError("Chỉ hỗ trợ các tệp: .pdf, .docx, .txt, .md");
+    if (![".pdf", ".docx", ".txt", ".md", ".xlsx", ".xls", ".csv"].includes(ext)) {
+      setUploadError("Chỉ hỗ trợ các tệp: .pdf, .docx, .txt, .md, .xlsx, .xls, .csv");
       return;
     }
 
@@ -414,7 +415,7 @@ export default function AdminPage() {
               type="file"
               ref={fileInputRef}
               onChange={(e) => handleFileUpload(e.target.files)}
-              accept=".pdf,.docx,.txt,.md"
+              accept=".pdf,.docx,.txt,.md,.xlsx,.xls,.csv"
               className="hidden"
               disabled={uploading}
             />
@@ -437,7 +438,7 @@ export default function AdminPage() {
                 )}
               </p>
               <p className="text-xs text-slate-400 mt-1">
-                Hỗ trợ các định dạng văn bản pháp quy: PDF, DOCX, TXT, MD (tối đa 50MB)
+                Hỗ trợ các định dạng văn bản & bảng tính: PDF, DOCX, TXT, MD, XLSX, XLS, CSV (tối đa 50MB)
               </p>
             </div>
           </div>
@@ -513,7 +514,13 @@ export default function AdminPage() {
                       <tr key={doc.id} className="hover:bg-slate-50/60 transition-colors">
                         <td className="px-5 py-3.5 font-medium text-slate-800">
                           <div className="flex items-center gap-2 max-w-sm sm:max-w-md truncate">
-                            <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                            {["xlsx", "xls", "csv"].includes((doc.file_type || "").toLowerCase()) ? (
+                              <FileSpreadsheet className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                            ) : ["pdf"].includes((doc.file_type || "").toLowerCase()) ? (
+                              <FileText className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                            ) : (
+                              <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                            )}
                             <span className="truncate" title={doc.original_name}>
                               {doc.original_name}
                             </span>

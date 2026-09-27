@@ -31,7 +31,7 @@ from app.rag.table_extractor import extract_all_tables
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger(__name__)
 
-SUPPORTED = {".pdf", ".docx", ".txt", ".md"}
+SUPPORTED = {".pdf", ".docx", ".txt", ".md", ".xlsx", ".xls", ".csv"}
 DATA_DIR = ROOT / "data"
 
 

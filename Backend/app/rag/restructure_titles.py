@@ -64,8 +64,11 @@ def _make_title_id(title: str, page_number: int) -> str:
     return str(abs(hash(f"{title.strip()}::{page_number}")))
 
 # Xóa các khoảng trắng
-def _clean_text(text: str) -> str:
+def _clean_text(text: str, preserve_newlines: bool = False) -> str:
     text = (text or "").replace("\xa0", " ")
+    if preserve_newlines:
+        lines = [re.sub(r"[ \t]+", " ", line).strip() for line in text.split("\n")]
+        return "\n".join(lines).strip()
     text = re.sub(r"\s+", " ", text).strip()
     return text
 
@@ -122,10 +125,30 @@ def _partition_file(file_path: Path):
                 )
                 cat = "Title" if is_heading else "NarrativeText"
                 elements.append(SimpleElement(text=text, category=cat, page_number=1))
+
+            try:
+                from app.rag.table_extractor import extract_tables_from_docx
+                docx_tables = extract_tables_from_docx(file_path)
+                for tbl in docx_tables:
+                    elements.append(SimpleElement(text=tbl.markdown, category="Table", page_number=tbl.page_number))
+            except Exception as e_tbl:
+                log.warning("extract_tables_from_docx in partition: %s", e_tbl)
+
             if elements:
                 return elements
         except Exception as e:
             log.warning("Fallback python-docx failed for %s: %s", file_path.name, e)
+
+    if file_ext in [".xlsx", ".xls", ".csv"]:
+        try:
+            from app.rag.table_extractor import extract_tables_from_excel
+            excel_tables = extract_tables_from_excel(file_path)
+            for tbl in excel_tables:
+                elements.append(SimpleElement(text=tbl.markdown, category="Table", page_number=tbl.page_number))
+            if elements:
+                return elements
+        except Exception as e:
+            log.warning("Fallback excel extraction failed for %s: %s", file_path.name, e)
 
     try:
         text = file_path.read_text(encoding="utf-8", errors="ignore")
@@ -272,8 +295,8 @@ def _new_node(title: str, page_number: int) -> dict:
     }
 
 #append nội dung và số trang vào node(title)
-def _append_content(node: dict, text: str, page_number: int):
-    text = _clean_text(text)
+def _append_content(node: dict, text: str, page_number: int, is_table: bool = False):
+    text = _clean_text(text, preserve_newlines=is_table)
     if not text:
         return
 
@@ -305,17 +328,19 @@ def _build_tree_rule_based(elements: list[Any], file_path: Path) -> dict:
     current_page = 1
 
     for el in elements:
-        text = _clean_text(getattr(el, "text", "") or "")
+        category = getattr(el, "category", "") or ""
+        raw_text = getattr(el, "text", "") or ""
+        is_table = (category == "Table") or ("|" in raw_text and "\n" in raw_text)
+        text = _clean_text(raw_text, preserve_newlines=is_table)
         if not text:
             continue
 
         metadata = getattr(el, "metadata", None)
-        category = getattr(el, "category", "") or ""
         page_number = getattr(metadata, "page_number", None) if metadata else None
         if page_number:
             current_page = _safe_page_number(page_number)
 
-        if _looks_like_heading(text, category):
+        if not is_table and _looks_like_heading(text, category):
             level = _heading_level(text, category)
             node = _new_node(text, current_page)
 
@@ -327,7 +352,7 @@ def _build_tree_rule_based(elements: list[Any], file_path: Path) -> dict:
             stack.append((level, node))
             current_node = node
         else:
-            _append_content(current_node, text, current_page)
+            _append_content(current_node, text, current_page, is_table=is_table)
 
     return root
 
@@ -387,11 +412,11 @@ def chunk_by_title(file_path: str | Path) -> dict:
     file_path = Path(file_path)
     file_ext = file_path.suffix.lower()
 
-    supported_exts = {".txt", ".md", ".html", ".htm", ".pdf", ".docx", ".doc"}
+    supported_exts = {".txt", ".md", ".html", ".htm", ".pdf", ".docx", ".doc", ".xlsx", ".xls", ".csv"}
     if file_ext not in supported_exts:
         raise ValueError(
             f"Định dạng file không được hỗ trợ: {file_ext}. "
-            "Vui lòng cung cấp file Text (.txt), Markdown (.md), HTML (.html) hoặc PDF/DOCX."
+            "Vui lòng cung cấp file Text (.txt), Markdown (.md), HTML (.html), PDF, Word (.docx) hoặc Excel (.xlsx, .csv)."
         )
 
     if file_ext == ".txt":
@@ -406,7 +431,7 @@ def chunk_by_title(file_path: str | Path) -> dict:
 
     if not structured.get("children"):
         all_text = "\n\n".join(
-            _clean_text(getattr(el, "text", "") or "")
+            _clean_text(getattr(el, "text", "") or "", preserve_newlines=(getattr(el, "category", "") == "Table"))
             for el in elements
             if _clean_text(getattr(el, "text", "") or "")
         ).strip()
