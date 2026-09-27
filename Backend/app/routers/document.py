@@ -270,7 +270,11 @@ async def get_preview_text(*, filename: str):
                 from app.rag.table_extractor import extract_tables_from_excel
                 excel_tables = extract_tables_from_excel(target_path)
                 if excel_tables:
-                    text_content = "\n\n".join(f"### {t.title}\n{t.markdown}" for t in excel_tables)
+                    text_content = "\n\n".join(
+                        f"### {t.get('sheet_name', 'Bảng tính')}\n{t.get('table_text', '')}"
+                        for t in excel_tables
+                        if t.get("table_text")
+                    )
                 elif ext == ".csv":
                     try:
                         text_content = target_path.read_text(encoding="utf-8")
@@ -300,7 +304,11 @@ async def get_preview_text(*, filename: str):
                 from app.rag.table_extractor import extract_tables_from_docx
                 docx_tables = extract_tables_from_docx(target_path)
                 if docx_tables:
-                    table_mds = "\n\n".join(f"### [Bảng dữ liệu trích xuất]\n{t.markdown}" for t in docx_tables)
+                    table_mds = "\n\n".join(
+                        f"### [Bảng dữ liệu trích xuất]\n{t.get('table_text', '')}"
+                        for t in docx_tables
+                        if t.get("table_text")
+                    )
                     text_content = (text_content + "\n\n" + table_mds).strip()
             except Exception as e_tbl:
                 logger.warning("Bóc tách bảng docx preview lỗi: %s", e_tbl)

@@ -130,7 +130,10 @@ def _partition_file(file_path: Path):
                 from app.rag.table_extractor import extract_tables_from_docx
                 docx_tables = extract_tables_from_docx(file_path)
                 for tbl in docx_tables:
-                    elements.append(SimpleElement(text=tbl.markdown, category="Table", page_number=tbl.page_number))
+                    table_text = tbl.get("table_text", "")
+                    page_num = tbl.get("page") or 1
+                    if table_text:
+                        elements.append(SimpleElement(text=table_text, category="Table", page_number=page_num))
             except Exception as e_tbl:
                 log.warning("extract_tables_from_docx in partition: %s", e_tbl)
 
@@ -144,7 +147,10 @@ def _partition_file(file_path: Path):
             from app.rag.table_extractor import extract_tables_from_excel
             excel_tables = extract_tables_from_excel(file_path)
             for tbl in excel_tables:
-                elements.append(SimpleElement(text=tbl.markdown, category="Table", page_number=tbl.page_number))
+                table_text = tbl.get("table_text", "")
+                page_num = tbl.get("page") or 1
+                if table_text:
+                    elements.append(SimpleElement(text=table_text, category="Table", page_number=page_num))
             if elements:
                 return elements
         except Exception as e:
