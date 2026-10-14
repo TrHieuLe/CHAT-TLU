@@ -109,6 +109,26 @@ class ChatMessageFeedback(Base):
     )
 
 
+class CrawlRun(Base):
+    """Lịch sử mỗi phiên quét thông báo web trường (thủ công hoặc theo lịch)."""
+    __tablename__ = "crawl_runs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    trigger: Mapped[str] = mapped_column(String(20))  # "manual" | "schedule"
+    max_articles: Mapped[int] = mapped_column(Integer, default=0)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    total: Mapped[int] = mapped_column(Integer, default=0)
+    new: Mapped[int] = mapped_column(Integer, default=0)
+    updated: Mapped[int] = mapped_column(Integer, default=0)
+    skipped: Mapped[int] = mapped_column(Integer, default=0)
+    failed: Mapped[int] = mapped_column(Integer, default=0)
+    errors: Mapped[str | None] = mapped_column(Text, nullable=True)  # JSON list
+
+
 async def init_db():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

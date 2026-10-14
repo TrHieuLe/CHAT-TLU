@@ -21,6 +21,7 @@ export interface ImageChatResponse {
   answer: string;
   image_url?: string;
   sources?: ChatSource[];
+  message_id?: number;
 }
 
 export function toAbsoluteApiUrl(path: string) {
@@ -164,7 +165,8 @@ export async function streamChat(
   onDone: () => void,
   onError: (e: string) => void,
   onImages?: (urls: string[]) => void,
-  onStatus?: (status: string) => void
+  onStatus?: (status: string) => void,
+  onMessageId?: (id: number) => void
 ) {
   let r: Response;
   try {
@@ -216,6 +218,12 @@ export async function streamChat(
         continue;
       }
 
+      if (data.startsWith("[MSG_ID]")) {
+        const id = parseInt(data.slice(8), 10);
+        if (onMessageId && Number.isFinite(id)) onMessageId(id);
+        continue;
+      }
+
       if (data.startsWith("[SOURCES]")) {
         try {
           onSources(JSON.parse(data.slice(9)));
@@ -245,7 +253,16 @@ export async function streamChat(
   onDone();
 }
 
-import type { DocumentItem, DocumentStats, UserMemoryItem, CrawlerStatus, CrawlJob } from "./types";
+import type {
+  DocumentItem,
+  DocumentStats,
+  UserMemoryItem,
+  CrawlerStatus,
+  CrawlJob,
+  CrawlRun,
+  FeedbackItem,
+  FeedbackSummary,
+} from "./types";
 
 // ─── Admin auth: key lưu trong sessionStorage, gửi qua header X-Admin-Key ───
 const ADMIN_KEY_STORAGE = "studybot_admin_key";
@@ -403,4 +420,48 @@ export async function getCrawlerStatus(): Promise<CrawlerStatus | null> {
   }
 }
 
+export async function getCrawlRuns(limit = 10): Promise<{ schedule_interval_hours: number; runs: CrawlRun[] } | null> {
+  try {
+    const r = await adminFetch(`/api/crawler/runs?limit=${limit}`);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
 
+export async function getFeedbackSummary(days = 30): Promise<FeedbackSummary | null> {
+  try {
+    const r = await adminFetch(`/api/admin/feedback/summary?days=${days}`);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch {
+    return null;
+  }
+}
+
+export async function getFeedbackList(
+  rating?: "like" | "dislike",
+  limit = 20,
+  offset = 0
+): Promise<{ total: number; items: FeedbackItem[] }> {
+  try {
+    const params = new URLSearchParams({ limit: String(limit), offset: String(offset) });
+    if (rating) params.set("rating", rating);
+    const r = await adminFetch(`/api/admin/feedback?${params}`);
+    if (!r.ok) return { total: 0, items: [] };
+    return await r.json();
+  } catch {
+    return { total: 0, items: [] };
+  }
+}
+
+export async function addFeedbackToEval(feedbackId: number): Promise<{ ok: boolean; message?: string }> {
+  try {
+    const r = await adminFetch(`/api/admin/feedback/${feedbackId}/to-eval`, { method: "POST" });
+    const data = await r.json().catch(() => ({}));
+    return { ok: r.ok, message: data.message || data.detail };
+  } catch (err: any) {
+    return { ok: false, message: err?.message || "Lỗi kết nối máy chủ" };
+  }
+}

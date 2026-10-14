@@ -375,6 +375,17 @@ class SemanticCache:
             self._rebuild_matrix()
             logger.debug("[SemanticCache] Added '%s'. Total: %d", norm_q[:40], len(self._entries))
 
+    def remove_by_answer(self, answer: str) -> int:
+        """Xóa các entry có đúng câu trả lời này (vd khi người dùng bấm dislike). Trả về số entry đã xóa."""
+        target = (answer or "").strip()
+        if not target:
+            return 0
+        with self._lock:
+            victims = [e for e in self._entries if e.answer.strip() == target]
+            for e in victims:
+                self._remove(e)
+            return len(victims)
+
     def clear(self) -> None:
         """Xóa toàn bộ cache (RAM + SQLite)."""
         with self._lock:

@@ -244,12 +244,13 @@ async def _stream_text_answer(
                     cached_answer, cached_sources = cached_entry.answer, cached_entry.source_names
                     timer.tags["path"] = f"cache_{match_type}"
                     db.add(ChatMessage(session_id=session_id, role="user", content=question))
-                    db.add(ChatMessage(
+                    model_msg = ChatMessage(
                         session_id=session_id,
                         role="model",
                         content=cached_answer,
                         source_docs=_pack_meta(sources=cached_sources, kind="rag_cached"),
-                    ))
+                    )
+                    db.add(model_msg)
                     await db.commit()
 
                     if cached_sources:
@@ -268,6 +269,7 @@ async def _stream_text_answer(
 
                     # Tiêu đề: dùng lại tiêu đề đã cache; nếu không có thì chờ task chạy song song
                     await _finish_title(db, cached_title=cached_entry.title)
+                    yield f"data: [MSG_ID]{model_msg.id}\n\n"
                     yield "data: [DONE]\n\n"
                     return
 
@@ -421,12 +423,13 @@ async def _stream_text_answer(
 
             full = postprocess_answer(full, effective_question)
 
-            db.add(ChatMessage(
+            model_msg = ChatMessage(
                 session_id=session_id,
                 role="model",
                 content=full,
                 source_docs=_pack_meta(sources=source_names, kind="rag"),
-            ))
+            )
+            db.add(model_msg)
             await db.commit()
             await _finish_title(db)
 
@@ -442,6 +445,7 @@ async def _stream_text_answer(
                 except Exception as e:
                     logger.warning("Lưu Semantic Cache thất bại: %s", e)
 
+            yield f"data: [MSG_ID]{model_msg.id}\n\n"
             yield "data: [DONE]\n\n"
         finally:
             if title_task is not None and not title_task.done():
@@ -482,15 +486,17 @@ async def _stream_followup_about_last_image(
 
             yield f"data: {json.dumps(full, ensure_ascii=False)}\n\n"
 
-            db.add(ChatMessage(
+            model_msg = ChatMessage(
                 session_id=session_id,
                 role="model",
                 content=full,
                 source_docs=_pack_meta(images=[image_url], kind="vision_followup"),
-            ))
+            )
+            db.add(model_msg)
             await db.commit()
             await _maybe_set_title(db, session_id, question)
 
+            yield f"data: [MSG_ID]{model_msg.id}\n\n"
             yield "data: [DONE]\n\n"
         finally:
             await db.close()
@@ -624,12 +630,13 @@ async def analyze_uploaded_image(
         logger.exception("Analyze uploaded image error: %s", e)
         answer = "Mình chưa phân tích được ảnh này. Hãy thử lại."
 
-    db.add(ChatMessage(
+    model_msg = ChatMessage(
         session_id=session_id,
         role="model",
         content=answer,
         source_docs=_pack_meta(images=[image_url], kind="vision_upload"),
-    ))
+    )
+    db.add(model_msg)
     await db.commit()
     await _maybe_set_title(db, session_id, user_prompt)
 
@@ -637,6 +644,7 @@ async def analyze_uploaded_image(
         "ok": True,
         "answer": answer,
         "image_url": image_url,
+        "message_id": model_msg.id,
     }
 
 
@@ -652,16 +660,34 @@ async def submit_feedback(req: ChatFeedbackRequest, db: AsyncSession = Depends(g
     if req.rating not in {"like", "dislike"}:
         raise HTTPException(400, "Rating phải là 'like' hoặc 'dislike'")
 
-    fb = ChatMessageFeedback(
-        session_id=req.session_id,
-        message_id=req.message_id,
-        rating=req.rating,
-        comment=req.comment,
-    )
-    db.add(fb)
+    message = None
+    if req.message_id is not None:
+        message = await db.get(ChatMessage, req.message_id)
+        if message is None or message.session_id != req.session_id or message.role != "model":
+            raise HTTPException(404, "Không tìm thấy câu trả lời để đánh giá")
+
+    # Mỗi câu trả lời chỉ giữ một đánh giá: bấm lại (đổi like ↔ dislike) thì cập nhật
+    fb = None
+    if message is not None:
+        res = await db.execute(
+            select(ChatMessageFeedback).where(ChatMessageFeedback.message_id == message.id)
+        )
+        fb = res.scalars().first()
+    if fb is None:
+        fb = ChatMessageFeedback(session_id=req.session_id, message_id=req.message_id)
+        db.add(fb)
+    fb.rating = req.rating
+    fb.comment = req.comment
     await db.commit()
     await db.refresh(fb)
-    return {"ok": True, "id": fb.id}
+
+    # Câu trả lời bị chê không được phục vụ lại từ Semantic Cache
+    removed = 0
+    if req.rating == "dislike" and message is not None:
+        removed = get_semantic_cache().remove_by_answer(message.content)
+        if removed:
+            logger.info("Dislike message %s → xóa %d entry semantic cache", message.id, removed)
+    return {"ok": True, "id": fb.id, "cache_removed": removed}
 
 
 @router.get("/cache/stats", dependencies=[Depends(require_admin)])

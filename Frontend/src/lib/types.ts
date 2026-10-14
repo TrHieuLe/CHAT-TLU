@@ -92,4 +92,35 @@ export type CrawlerStatus = {
   }[];
   job?: CrawlJob;
 };
-
+
+export interface CrawlRun {
+  id: number;
+  trigger: "manual" | "schedule";
+  max_articles: number;
+  started_at: string | null;
+  finished_at: string | null;
+  total: number;
+  new: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  errors: string[];
+}
+
+export interface FeedbackItem {
+  id: number;
+  rating: "like" | "dislike";
+  comment: string | null;
+  created_at: string | null;
+  session_id: string;
+  message_id: number | null;
+  question: string | null;
+  answer: string | null;
+  sources: string[];
+}
+
+export interface FeedbackSummary {
+  days: number;
+  totals: { like: number; dislike: number };
+  by_day: { date: string; like: number; dislike: number }[];
+}

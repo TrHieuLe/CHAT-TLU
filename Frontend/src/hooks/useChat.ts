@@ -19,6 +19,16 @@ export function useChat(sessionId: string) {
     setLoading(false);
   }, []);
 
+  // Gắn ID tin nhắn trong DB vào câu trả lời cuối (để gửi like/dislike đúng câu)
+  const setLastModelId = useCallback((id: number) => {
+    setMessages((prev) => {
+      const next = [...prev];
+      const last = next[next.length - 1];
+      if (last && last.role === "model") last.id = id;
+      return next;
+    });
+  }, []);
+
   const finishLastModel = useCallback(() => {
     setMessages((prev) => {
       const next = [...prev];
@@ -83,7 +93,9 @@ export function useChat(sessionId: string) {
               }
               return next;
             });
-          }
+          },
+          undefined,
+          setLastModelId
         );
       } catch (e) {
         console.error(e);
@@ -92,7 +104,7 @@ export function useChat(sessionId: string) {
         setLoading(false);
       }
     },
-    [sessionId, finishLastModel]
+    [sessionId, finishLastModel, setLastModelId]
   );
 
   const sendImage = useCallback(
@@ -121,6 +133,7 @@ export function useChat(sessionId: string) {
           if (last && last.role === "model") {
             last.content = res.answer;
             last.isStreaming = false;
+            if (res.message_id) last.id = res.message_id;
             last.images = [];
           }
 
@@ -201,7 +214,9 @@ export function useChat(sessionId: string) {
             }
             return next;
           });
-        }
+        },
+        undefined,
+        setLastModelId
       );
     } catch (e) {
       console.error(e);
@@ -209,7 +224,7 @@ export function useChat(sessionId: string) {
       finishLastModel();
       setLoading(false);
     }
-  }, [loading, messages, sessionId, finishLastModel]);
+  }, [loading, messages, sessionId, finishLastModel, setLastModelId]);
 
   return {
     messages,

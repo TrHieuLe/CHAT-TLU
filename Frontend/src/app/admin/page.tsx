@@ -40,6 +40,7 @@ import {
 } from "@/lib/api";
 import { DocumentItem, DocumentStats, CrawlerStatus, CrawlJob } from "@/lib/types";
 import DocPreviewModal from "@/components/chat/DocPreviewModal";
+import { CrawlRunsPanel, FeedbackPanel } from "@/components/admin/FeedbackPanel";
 
 export default function AdminPage() {
   // null = đang kiểm tra sessionStorage (tránh nháy màn đăng nhập khi đã có key)
@@ -542,7 +543,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               </div>
             </div>
           )}
+
+          <div className="pt-2 border-t border-sky-100/80">
+            <CrawlRunsPanel refreshKey={crawlJob?.finished_at} />
+          </div>
         </div>
+
+        {/* Phản hồi like/dislike */}
+        <FeedbackPanel />
 
         {/* Upload Zone */}
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">

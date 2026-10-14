@@ -84,6 +84,7 @@ async def get_history(
     for m in r.scalars().all():
       meta = _parse_meta(m.source_docs)
       items.append({
+          "id": m.id,
           "role": m.role,
           "content": m.content,
           "sources": meta.get("sources", []),

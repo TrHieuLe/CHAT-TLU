@@ -9,7 +9,7 @@ from pathlib import Path
 from app.core.config import settings
 from app.models.database import init_db
 from app.rag.qdrant_client_custom import qdrant_client
-from app.routers import chat, sessions, document, memory, crawler
+from app.routers import admin, chat, sessions, document, memory, crawler
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
@@ -75,9 +75,19 @@ async def lifespan(app: FastAPI):
     logger.info(f"Semantic cache: {get_semantic_cache().get_stats()['cached_entries']} entry")
     kb_watch = asyncio.create_task(watch_kb_changes(chat._async, settings.QDRANT_COLLECTION))
 
+    # Quét thông báo web trường định kỳ
+    crawl_task = None
+    if settings.CRAWL_INTERVAL_HOURS > 0:
+        crawl_task = asyncio.create_task(
+            crawler.crawl_scheduler(settings.CRAWL_INTERVAL_HOURS, settings.CRAWL_SCHEDULE_MAX_ARTICLES)
+        )
+        logger.info(f"Lịch quét thông báo: mỗi {settings.CRAWL_INTERVAL_HOURS}h")
+
     yield
 
     kb_watch.cancel()
+    if crawl_task is not None:
+        crawl_task.cancel()
 
 
 app = FastAPI(title="NCKH StudyBot API v3.1", version="3.1.0", lifespan=lifespan)
@@ -102,6 +112,7 @@ app.include_router(sessions.router)
 app.include_router(document.router)
 app.include_router(memory.router)
 app.include_router(crawler.router)
+app.include_router(admin.router)
 
 
 @app.get("/")

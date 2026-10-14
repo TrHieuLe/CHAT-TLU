@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     # Reranking & Retrieval Optimization
     # Tắt mặc định: trên bộ test TLU, hybrid RRF không rerank cho HitRate/MRR bằng hoặc cao hơn
     # (246 câu: 68.2%/0.606 vs 67.8%/0.555) trong khi reranker tốn 7-9s/câu trên CPU.
+    # Đo lại 2026-10-14 sau khi re-index: hybrid RRF đạt Hit@4 95.3% — xem benchmark_eval/retrieval_variants.md.
     # Nếu bật lại, nên dùng RERANKER_QUANTIZE_INT8=true + RERANKER_MAX_LENGTH=256 (~3.6s).
     ENABLE_RERANKER: bool = False
     RERANKER_MODEL: str = "BAAI/bge-reranker-base"
@@ -74,6 +75,10 @@ class Settings(BaseSettings):
     TLU_CRAWL_BASE_URL: str = "https://tlu.edu.vn"
     TLU_CRAWL_CATEGORY_IDS: list[int] = [2010]   # category "Thông báo"
     TLU_CRAWL_TIMEOUT_SECONDS: float = 20.0
+    CRAWL_INTERVAL_HOURS: float = 6.0          # quét tự động định kỳ, 0 = tắt
+    CRAWL_SCHEDULE_MAX_ARTICLES: int = 10
+    # File JSONL gom câu hỏi bị dislike để bổ sung vào bộ đánh giá
+    EVAL_CANDIDATES_PATH: str = "../benchmark_eval/data/feedback_candidates.jsonl"
     # Bảo mật
     ADMIN_API_KEY: str | None = None        # bắt buộc để dùng endpoint quản trị (header X-Admin-Key)
     ADMIN_AUTH_DISABLED: bool = False       # chỉ bật cho test/dev
