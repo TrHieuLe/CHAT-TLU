@@ -24,6 +24,7 @@ os.environ.setdefault("GEMINI_API_KEY", "test-key-not-real")
 os.environ.setdefault("GOOGLE_API_KEY", "test-key-not-real")
 os.environ.setdefault("QDRANT_URL", "http://localhost:6333")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
+os.environ.setdefault("WARMUP_MODELS", "false")
 
 
 # ─── Fixtures ──────────────────────────────────────────────────────────────────

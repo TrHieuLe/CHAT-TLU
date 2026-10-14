@@ -9,7 +9,8 @@ from app.routers.chat_formatters import normalize_text, strip_md_prefix
 
 logger = logging.getLogger(__name__)
 
-HISTORY_TOKEN_BUDGET = 12_000
+# Giữ history gọn để giảm input token → Gemini trả chữ đầu nhanh hơn
+HISTORY_TOKEN_BUDGET = 4_000
 
 
 def is_reference_followup(question: str) -> bool:

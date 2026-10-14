@@ -1,10 +1,12 @@
 import asyncio
+import functools
 import logging
 from typing import TYPE_CHECKING, Any
 
 from qdrant_client.http.models import Filter, FieldCondition, MatchValue, models
 
 from app.core.config import settings
+from app.core.timing import stage
 
 try:
     from app.rag import embedder
@@ -36,7 +38,12 @@ class Retriever:
 
         try:
             loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(None, current_embedder.get_embeddings, [query])
+            embed_fn = functools.partial(
+                current_embedder.get_embeddings,
+                max_length=getattr(settings, "QUERY_MAX_LENGTH", 512),
+            )
+            with stage("embed"):
+                result = await loop.run_in_executor(None, embed_fn, [query])
             dense_, sparse_ = result
         except Exception as e:
             logger.exception("Embedding failed: %s", e)
@@ -92,14 +99,15 @@ class Retriever:
                         )
                     )
 
-                result = await self.async_client.query_points(
-                    collection_name=collection_name,
-                    prefetch=prefetch,
-                    query=models.FusionQuery(fusion=models.Fusion.RRF),
-                    with_payload=True,
-                    limit=candidates_k,
-                    query_filter=filter_obj,
-                )
+                with stage("qdrant"):
+                    result = await self.async_client.query_points(
+                        collection_name=collection_name,
+                        prefetch=prefetch,
+                        query=models.FusionQuery(fusion=models.Fusion.RRF),
+                        with_payload=True,
+                        limit=candidates_k,
+                        query_filter=filter_obj,
+                    )
                 raw_points = getattr(result, "points", []) or []
 
             else:
@@ -133,9 +141,10 @@ class Retriever:
             from app.rag.reranker import get_reranker
             reranker = get_reranker()
             loop = asyncio.get_running_loop()
-            scored_candidates = await loop.run_in_executor(
-                None, reranker.rerank, query, raw_points, top_k
-            )
+            with stage("rerank"):
+                scored_candidates = await loop.run_in_executor(
+                    None, reranker.rerank, query, raw_points, top_k
+                )
 
             final_points = []
             for point, score in scored_candidates:

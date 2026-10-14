@@ -49,5 +49,15 @@ class Settings(BaseSettings):
     TOP_K: int = 4
     MIN_RELEVANCE_SCORE: float = 0.15
 
+    # Latency tuning
+    WARMUP_MODELS: bool = True              # nạp sẵn embedder + reranker khi khởi động
+    QUERY_MAX_LENGTH: int = 512             # max token khi embed câu hỏi
+    GEMINI_THINKING_BUDGET: int | None = None  # None = mặc định model; một số model (vd flash-lite-latest) từ chối budget=0
+    LLM_FIRST_TOKEN_TIMEOUT: float = 12.0   # giây chờ chunk đầu trước khi đổi sang model dự phòng
+    HISTORY_MAX_MESSAGES: int = 30          # số tin nhắn gần nhất đọc từ DB mỗi lượt
+    RERANKER_BATCH_SIZE: int = 1            # batch nhỏ = ít padding; trên CPU nhanh hơn nhiều
+    RERANKER_MAX_LENGTH: int = 512
+    TORCH_NUM_THREADS: int | None = None    # None = dùng toàn bộ CPU core (torch mặc định chỉ dùng một nửa)
+
 
 settings = Settings()

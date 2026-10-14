@@ -35,12 +35,22 @@ _DEFAULT_BATCH_SIZE = 16
 _model: Optional[BGEM3FlagModel] = None
 
 
+def _cuda_available() -> bool:
+    try:
+        import torch
+        return bool(torch.cuda.is_available())
+    except Exception:
+        return False
+
+
 def _get_model() -> BGEM3FlagModel:
     """Trả về model instance, tải lần đầu nếu chưa có (lazy init)."""
     global _model
     if _model is None:
-        logger.info("⏳ Loading embedding model: %s ...", _MODEL_NAME)
-        _model = BGEM3FlagModel(_MODEL_NAME, use_fp16=True)
+        use_fp16 = _cuda_available()
+        logger.info("⏳ Loading embedding model: %s (fp16=%s) ...", _MODEL_NAME, use_fp16)
+        # fp16 chỉ có lợi trên GPU; trên CPU giữ fp32 để không bị chậm
+        _model = BGEM3FlagModel(_MODEL_NAME, use_fp16=use_fp16)
         logger.info("✅ Embedding model loaded successfully.")
     return _model
 
@@ -51,7 +61,13 @@ def warmup() -> None:
     Gọi hàm này trong lifespan/startup event để tránh cold-start latency
     cho request đầu tiên.
     """
-    _get_model()
+    model = _get_model()
+    # Chạy thử một lần để khởi tạo kernel/tokenizer, tránh request đầu bị chậm
+    try:
+        model.encode(["khởi động"], max_length=32, return_dense=True,
+                     return_sparse=True, return_colbert_vecs=False)
+    except Exception as e:
+        logger.warning("Warmup encode failed: %s", e)
     logger.info("🔥 Embedding model warmed up and ready.")
 
 
@@ -78,6 +94,7 @@ def get_embeddings(
     texts: list[str],
     *,
     batch_size: int = _DEFAULT_BATCH_SIZE,
+    max_length: int = _MAX_LENGTH,
 ) -> tuple[list, list[dict]]:
     """
     Chuyển đổi danh sách văn bản thành dense và sparse vectors.
@@ -85,6 +102,7 @@ def get_embeddings(
     Args:
         texts:      Danh sách các đoạn văn bản cần embedding.
         batch_size: Số lượng text xử lý mỗi batch (tránh tràn GPU RAM).
+        max_length: Số token tối đa; câu hỏi ngắn nên dùng ~512 để encode nhanh hơn.
 
     Returns:
         Tuple gồm 2 phần tử:
@@ -112,7 +130,7 @@ def get_embeddings(
     output = _get_model().encode(
         cleaned,
         batch_size=batch_size,
-        max_length=_MAX_LENGTH,
+        max_length=max_length,
         return_dense=True,
         return_sparse=True,
         return_colbert_vecs=False,

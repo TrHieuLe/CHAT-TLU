@@ -39,6 +39,23 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Failed to initialize Qdrant: {e}")
 
+    try:
+        import torch
+        torch.set_num_threads(settings.TORCH_NUM_THREADS or os.cpu_count() or 1)
+        logger.info(f"Torch dùng {torch.get_num_threads()} CPU threads")
+    except Exception as e:
+        logger.warning(f"Không thể cấu hình torch threads: {e}")
+
+    if settings.WARMUP_MODELS:
+        # Nạp sẵn embedder + reranker để câu hỏi đầu tiên không phải chờ load model
+        import asyncio
+        from app.rag import embedder, reranker
+        for name, fn in (("embedder", embedder.warmup), ("reranker", reranker.warmup)):
+            try:
+                await asyncio.to_thread(fn)
+            except Exception as e:
+                logger.warning(f"Warmup {name} thất bại: {e}")
+
     yield
 
 
