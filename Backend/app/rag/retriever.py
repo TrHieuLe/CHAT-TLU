@@ -54,29 +54,35 @@ class Retriever:
         self.client = client
         self.async_client = async_client
 
-    async def retrieve_v3(self, query: str, bot_id: int = 0):
-        logger.info("Embedding query for retrieval...")
-
+    async def embed_query(self, query: str):
+        """
+        Embed câu hỏi (dense, sparse) qua LRU cache. Dùng chung cho retrieval và semantic cache
+        để mỗi câu hỏi chỉ phải encode BGE-M3 một lần.
+        """
         current_embedder = embedder
         if current_embedder is None:
             from app.rag import embedder as current_embedder
 
         cache_key = " ".join((query or "").split()).lower()
+        cached = _embed_cache_get(cache_key)
+        if cached is not None:
+            return cached
+        loop = asyncio.get_running_loop()
+        embed_fn = functools.partial(
+            current_embedder.get_embeddings,
+            max_length=getattr(settings, "QUERY_MAX_LENGTH", 512),
+        )
+        with stage("embed"):
+            dense_, sparse_ = await loop.run_in_executor(None, embed_fn, [query])
+        if dense_ is not None and len(dense_) > 0:
+            _embed_cache_put(cache_key, (dense_, sparse_))
+        return dense_, sparse_
+
+    async def retrieve_v3(self, query: str, bot_id: int = 0):
+        logger.info("Embedding query for retrieval...")
+
         try:
-            cached = _embed_cache_get(cache_key)
-            if cached is not None:
-                dense_, sparse_ = cached
-            else:
-                loop = asyncio.get_running_loop()
-                embed_fn = functools.partial(
-                    current_embedder.get_embeddings,
-                    max_length=getattr(settings, "QUERY_MAX_LENGTH", 512),
-                )
-                with stage("embed"):
-                    result = await loop.run_in_executor(None, embed_fn, [query])
-                dense_, sparse_ = result
-                if dense_ is not None and len(dense_) > 0:
-                    _embed_cache_put(cache_key, (dense_, sparse_))
+            dense_, sparse_ = await self.embed_query(query)
         except Exception as e:
             logger.exception("Embedding failed: %s", e)
             return []

@@ -197,23 +197,52 @@ async def _stream_text_answer(
     # Tạo tiêu đề song song với RAG/LLM thay vì chờ sau khi trả lời xong
     title_task = asyncio.create_task(_generate_title(question)) if is_first_turn else None
 
-    async def _finish_title(db: AsyncSession):
+    generated_title = ""
+
+    async def _finish_title(db: AsyncSession, cached_title: str = ""):
+        nonlocal generated_title
         if title_task is None:
             return
-        with timer.stage("title_wait"):
-            title = await title_task
+        if cached_title and not title_task.done():
+            # Trúng cache có sẵn tiêu đề → khỏi chờ Gemini
+            title_task.cancel()
+            title = cached_title
+        else:
+            with timer.stage("title_wait"):
+                title = await title_task
+        generated_title = title
         await _save_title(db, session_id, title)
 
     async with AsyncSessionLocal() as db:
         try:
-            # ─── 0. Semantic Cache Check (< 30ms) ────────────────────────────────
-            # Tăng tốc phản hồi tức thì cho các câu hỏi phổ biến độc lập
-            if len(history) <= 1:
+            from app.memory.memory_service import get_user_cell_state_prompt
+            user_context = await get_user_cell_state_prompt(user_id, db)
+
+            # ─── 0. Semantic Cache Check ─────────────────────────────────────────
+            # Chỉ cache câu hỏi độc lập (lượt đầu) và KHÔNG cá nhân hóa — câu trả lời có hồ sơ
+            # sinh viên (khóa, ngành...) không được dùng lại cho người khác.
+            cache_eligible = len(history) <= 1 and not user_context
+            cache = get_semantic_cache()
+            cache_vector = None
+            if cache_eligible:
+                # exact / canonical: không cần vector
                 with timer.stage("cache"):
-                    cached = get_semantic_cache().get(question)
+                    cached = cache.get_entry(question)
+                if cached is None:
+                    # semantic: dùng vector của chính câu sẽ đem đi retrieve (LRU → không encode 2 lần)
+                    try:
+                        dense_, _ = await _retriever.embed_query(enhance_query(question))
+                        if dense_ is not None and len(dense_) > 0:
+                            cache_vector = dense_[0]
+                    except Exception as e:
+                        logger.warning("Không embed được câu hỏi cho semantic cache: %s", e)
+                    if cache_vector is not None:
+                        with timer.stage("cache"):
+                            cached = cache.get_entry(question, query_vector=cache_vector)
                 if cached:
-                    timer.tags["path"] = "cache"
-                    cached_answer, cached_sources, match_type = cached
+                    cached_entry, match_type = cached
+                    cached_answer, cached_sources = cached_entry.answer, cached_entry.source_names
+                    timer.tags["path"] = f"cache_{match_type}"
                     db.add(ChatMessage(session_id=session_id, role="user", content=question))
                     db.add(ChatMessage(
                         session_id=session_id,
@@ -222,18 +251,23 @@ async def _stream_text_answer(
                         source_docs=_pack_meta(sources=cached_sources, kind="rag_cached"),
                     ))
                     await db.commit()
-                    await _finish_title(db)
 
                     if cached_sources:
                         yield f"data: [SOURCES]{json.dumps(cached_sources, ensure_ascii=False)}\n\n"
 
-                    # Fast streaming animation (< 50ms)
+                    # Hiệu ứng stream ngắn: ~10 đoạn. (sleep trên Windows tối thiểu ~15ms, nên
+                    # chia nhỏ theo từng 3 từ từng làm câu trả lời cache chậm thêm ~1.3s)
                     words = cached_answer.split(" ")
-                    for i in range(0, len(words), 3):
-                        chunk_str = " ".join(words[i:i+3]) + " "
+                    step = max(1, -(-len(words) // 10))
+                    timer.mark_since_start("ttft")
+                    for i in range(0, len(words), step):
+                        if i:
+                            await asyncio.sleep(0.01)
+                        chunk_str = " ".join(words[i:i + step]) + " "
                         yield f"data: {json.dumps(chunk_str, ensure_ascii=False)}\n\n"
-                        await asyncio.sleep(0.005)
 
+                    # Tiêu đề: dùng lại tiêu đề đã cache; nếu không có thì chờ task chạy song song
+                    await _finish_title(db, cached_title=cached_entry.title)
                     yield "data: [DONE]\n\n"
                     return
 
@@ -346,15 +380,14 @@ async def _stream_text_answer(
                 yield f"data: [SOURCES]{json.dumps(source_names, ensure_ascii=False)}\n\n"
 
             from app.llm.llm_service import llm_service
-            from app.memory.memory_service import get_user_cell_state_prompt
 
             trimmed_history = trim_history_by_token_budget(history, HISTORY_TOKEN_BUDGET)
-            user_context = await get_user_cell_state_prompt(user_id, db)
             instruction = f"{SYSTEM_INSTRUCTION}\n\n{user_context}" if user_context else SYSTEM_INSTRUCTION
 
             yield "data: [STATUS]Đang tổng hợp câu trả lời...\n\n"
 
             full = ""
+            llm_failed = False
             llm_start = timer.elapsed_ms()
             try:
                 async for delta in llm_service.stream_chat_response(
@@ -377,6 +410,13 @@ async def _stream_text_answer(
                 logger.exception("Gemini stream error: %s", err)
                 yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
                 full = msg
+                llm_failed = True
+            if not full:
+                # Mọi model đều lỗi (vd 429) nhưng không ném exception → tránh trả câu trả lời rỗng
+                logger.error("LLM không trả về nội dung nào (tất cả model đều lỗi)")
+                full = "Hệ thống quá tải, thử lại sau."
+                yield f"data: {json.dumps(full, ensure_ascii=False)}\n\n"
+                llm_failed = True
             timer.mark("llm", timer.elapsed_ms() - llm_start)
 
             full = postprocess_answer(full, effective_question)
@@ -393,10 +433,12 @@ async def _stream_text_answer(
             # Cập nhật tế bào nhớ dài hạn (Input Gate) — chạy nền, không chặn [DONE]
             _run_in_background(_update_memories_background(user_id, f"{question} {full}"))
 
-            # Lưu vào Semantic Cache nếu câu trả lời hợp lệ & câu hỏi độc lập
-            if len(history) <= 1 and full and not full.startswith("Lỗi:"):
+            # Lưu vào Semantic Cache: chỉ khi trả lời thành công VÀ có tài liệu ngữ cảnh
+            # (nếu Qdrant lỗi → không có context → không cache câu "chưa có thông tin")
+            if cache_eligible and ctx_parts and not llm_failed:
                 try:
-                    get_semantic_cache().put(question, full, source_names=source_names)
+                    cache.put(question, full, source_names=source_names, query_vector=cache_vector,
+                              title=generated_title)
                 except Exception as e:
                     logger.warning("Lưu Semantic Cache thất bại: %s", e)
 

@@ -62,6 +62,11 @@ class Settings(BaseSettings):
     RERANKER_MAX_LENGTH: int = 512
     RERANKER_QUANTIZE_INT8: bool = False    # int8 dynamic quantization trên CPU
     QDRANT_KEEPALIVE_SECONDS: float = 600.0  # giữ kết nối HTTP tới Qdrant (mặc định httpx chỉ 5s)
+    # Semantic cache (câu hỏi lượt đầu, không cá nhân hóa)
+    SEMANTIC_CACHE_THRESHOLD: float = 0.90   # kèm điều kiện cùng từ nội dung — xem semantic_cache.py
+    SEMANTIC_CACHE_MAX_SIZE: int = 1000
+    SEMANTIC_CACHE_TTL_SECONDS: float = 7 * 24 * 3600
+    SEMANTIC_CACHE_DB: str = "./semantic_cache.db"   # rỗng = chỉ lưu RAM
     TORCH_NUM_THREADS: int | None = None    # None = dùng toàn bộ CPU core (torch mặc định chỉ dùng một nửa)
 
 
