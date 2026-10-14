@@ -12,6 +12,9 @@ script này đo đúng index và model mà chatbot đang dùng.
 Cách dùng (trong thư mục Backend/):
     python -X utf8 scripts/eval_retrieval_variants.py            # toàn bộ bộ test
     python -X utf8 scripts/eval_retrieval_variants.py --refresh  # lấy lại dữ liệu từ Qdrant
+    python -X utf8 scripts/eval_retrieval_variants.py --testset ../benchmark_eval/data/tlu_testset_clean.json
+
+Mỗi bộ test có cache riêng; ground_truth luôn đọc lại từ file bộ test nên sửa nhãn không cần --refresh.
 """
 import argparse
 import asyncio
@@ -27,7 +30,14 @@ from app.core.config import settings  # noqa: E402
 from app.rag.query_enhancer import enhance_query  # noqa: E402
 
 TESTSET = ROOT.parent / "benchmark_eval" / "data" / "tlu_testset_246.json"
-CACHE = ROOT / "scripts" / ".cache" / "retrieval_lists.json"
+CACHE_DIR = ROOT / "scripts" / ".cache"
+
+
+def cache_path(testset: Path) -> Path:
+    # Giữ tên cache cũ cho bộ mặc định để không phải gọi lại Qdrant
+    if testset.resolve() == TESTSET.resolve():
+        return CACHE_DIR / "retrieval_lists.json"
+    return CACHE_DIR / f"retrieval_lists_{testset.stem}.json"
 
 
 def basename(name: str) -> str:
@@ -143,17 +153,20 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--depth", type=int, default=50, help="số kết quả lấy cho mỗi danh sách")
     ap.add_argument("--k", type=int, default=settings.TOP_K)
+    ap.add_argument("--testset", type=Path, default=TESTSET, help="file JSON bộ test (id, question, ground_truth)")
     ap.add_argument("--refresh", action="store_true")
     ap.add_argument("--out", type=Path, default=None, help="ghi bảng kết quả ra file markdown")
     args = ap.parse_args()
 
-    if CACHE.exists() and not args.refresh:
-        items = json.loads(CACHE.read_text(encoding="utf-8"))
-    else:
-        data = json.loads(TESTSET.read_text(encoding="utf-8"))
+    data = json.loads(args.testset.read_text(encoding="utf-8"))
+    cache = cache_path(args.testset)
+    items = json.loads(cache.read_text(encoding="utf-8")) if cache.exists() and not args.refresh else None
+    if items is None or [it["question"] for it in items] != [q["question"] for q in data]:
         items = asyncio.run(fetch_lists(data, args.depth))
-        CACHE.parent.mkdir(parents=True, exist_ok=True)
-        CACHE.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+        cache.parent.mkdir(parents=True, exist_ok=True)
+        cache.write_text(json.dumps(items, ensure_ascii=False), encoding="utf-8")
+    for it, q in zip(items, data):
+        it["ground_truth"] = [basename(g) for g in q["ground_truth"]]
 
     per_variant: dict[str, list] = {}
     for it in items:
@@ -162,7 +175,7 @@ def main():
 
     k = args.k
     lines = [
-        f"{len(items)} câu hỏi, collection `{settings.QDRANT_COLLECTION}`, K={k}",
+        f"{len(items)} câu hỏi (`{args.testset.name}`), collection `{settings.QDRANT_COLLECTION}`, K={k}",
         "",
         f"| Biến thể | Hit@{k} | MRR@{k} | Hit@{2 * k} |",
         "|---|---|---|---|",
