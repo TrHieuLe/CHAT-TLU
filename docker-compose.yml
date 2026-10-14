@@ -1,11 +1,14 @@
+# Triển khai 1 máy (GCP VM) — xem Backend/DEPLOY_GCP_PLAN.md.
+# Biến môi trường lấy từ file .env ở thư mục gốc (cùng chỗ với file này).
+# Nginx trên host: "/" → 127.0.0.1:3000, "/api/" → 127.0.0.1:8000 (tắt buffering cho SSE).
 services:
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:latest  # giữ như cũ; ghim phiên bản khi biết bản đang ghi dữ liệu
     container_name: studybot_qdrant
     restart: unless-stopped
+    # Chỉ mở cho localhost (dùng cho ingest/debug); backend gọi qua mạng nội bộ
     ports:
-      - "6333:6333"
-      - "6334:6334"
+      - "127.0.0.1:6333:6333"
     volumes:
       - qdrant_data:/qdrant/storage
     networks:
@@ -18,24 +21,30 @@ services:
     container_name: studybot_backend
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GEMINI_MODEL=${GEMINI_MODEL:-gemini-flash-lite-latest}
       - ENABLE_RERANKER=${ENABLE_RERANKER:-false}
-      - QDRANT_URL=http://qdrant:6333
+      - QDRANT_URL=${QDRANT_URL:-http://qdrant:6333}
+      - QDRANT_API_KEY=${QDRANT_API_KEY:-}
       - COLLECTION_NAME=${COLLECTION_NAME:-nckh_docs}
+      - QDRANT_COLLECTION=${COLLECTION_NAME:-nckh_docs}
       - DATABASE_URL=sqlite+aiosqlite:///./app.db
-      - RERANKER_TYPE=cross_encoder
-      - RERANKER_MODEL=BAAI/bge-reranker-base
-      - CANDIDATES_K=8
-      - RETRIEVAL_TOP_K=4
-      - MIN_RELEVANCE_SCORE=0.15
+      - SEMANTIC_CACHE_DB=/app/storage/semantic_cache.db
+      - EVAL_CANDIDATES_PATH=/app/storage/feedback_candidates.jsonl
+      # Bảo mật (bắt buộc ADMIN_API_KEY để dùng trang /admin)
+      - ADMIN_API_KEY=${ADMIN_API_KEY:-}
+      - CORS_ORIGINS=${CORS_ORIGINS:-}
+      - RATE_LIMIT_PER_MINUTE=${RATE_LIMIT_PER_MINUTE:-20}
+      - CRAWL_INTERVAL_HOURS=${CRAWL_INTERVAL_HOURS:-6}
     volumes:
-      - ./Backend/data:/app/data
-      - ./Backend/app.db:/app/app.db
-      - hf_cache:/root/.cache/huggingface
+      - ./Backend/data:/app/data                       # tài liệu gốc + thông báo đã cào
+      - ./Backend/app.db:/app/app.db                   # SQLite (tạo trước: touch Backend/app.db)
+      - ./Backend/storage:/app/storage                 # semantic cache, ứng viên bộ eval
+      - ./Backend/app/data/images:/app/app/data/images # ảnh trích từ tài liệu / ảnh người dùng gửi
+      - hf_cache:/root/.cache/huggingface              # model BGE-M3, tải 1 lần
     depends_on:
       - qdrant
     networks:
@@ -45,12 +54,15 @@ services:
     build:
       context: ./Frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-}
     container_name: studybot_frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-}
+      # Next.js rewrite /api/* → backend trong mạng docker (khi không đi qua Nginx)
+      - BACKEND_INTERNAL_URL=http://backend:8000
     depends_on:
       - backend
     networks:

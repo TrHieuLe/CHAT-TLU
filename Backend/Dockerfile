@@ -32,5 +32,7 @@ COPY . .
 # Expose port FastAPI
 EXPOSE 8000
 
-# Khởi chạy uvicorn server
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+HEALTHCHECK --interval=60s --timeout=10s --start-period=180s --retries=3     CMD curl -fsS http://localhost:8000/health || exit 1
+
+# Khởi chạy uvicorn server — giữ 1 worker: trạng thái crawler, rate limit và semantic cache nằm trong RAM
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

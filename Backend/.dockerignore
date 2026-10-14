@@ -14,3 +14,10 @@ app*.db
 test*.db
 .env
 .env.*
+# Dữ liệu được mount vào container (xem docker-compose.yml), không đóng vào image
+data/
+app/data/images/
+storage/
+semantic_cache.db
+scripts/.cache/
+*.exe

@@ -128,6 +128,12 @@ QDRANT_URL=http://qdrant:6333
 DATABASE_URL=sqlite+aiosqlite:///./app.db
 # Khi dùng chung domain qua Nginx reverse proxy, để trống NEXT_PUBLIC_API_URL để frontend tự gọi relative path (/api/...)
 NEXT_PUBLIC_API_URL=
+# Khóa trang quản trị /admin (bắt buộc). Sinh bằng: python3 -c "import secrets; print(secrets.token_urlsafe(24))"
+ADMIN_API_KEY=dien_khoa_quan_tri_o_day
+# Cùng domain qua Nginx thì để trống; chỉ điền khi frontend nằm ở domain khác
+CORS_ORIGINS=
+# Quét thông báo web trường tự động mỗi N giờ (0 = tắt)
+CRAWL_INTERVAL_HOURS=6
 ```
 *(Bấm `Ctrl + O` $\rightarrow$ `Enter` để lưu, `Ctrl + X` để thoát).*
 
@@ -135,6 +141,7 @@ NEXT_PUBLIC_API_URL=
 Khởi tạo file database trước để tránh Docker daemon mount nhầm thành thư mục:
 ```bash
 touch Backend/app.db
+mkdir -p Backend/storage
 ```
 
 Khởi động toàn bộ dịch vụ:
@@ -265,7 +272,20 @@ Khi số lượng sinh viên sử dụng tăng cao trong chiến dịch Living L
 | **Khởi động lại toàn bộ hệ thống** | `docker-compose restart` |
 | **Tắt toàn bộ hệ thống** | `docker-compose down` |
 | **Kiểm tra mức sử dụng RAM / CPU** | `htop` hoặc `docker stats` |
-| **Sao lưu cơ sở dữ liệu chat** | `cp Backend/app.db ~/backup_app_$(date +%F).db` |
+| **Kiểm tra sức khỏe hệ thống** | `curl -s localhost:8000/health` (503 nếu DB/Qdrant/Gemini key lỗi) |
+| **Sao lưu SQLite + snapshot Qdrant** | `./scripts/backup.sh` (giữ 7 ngày trong `backups/`) |
+
+### Sao lưu tự động & giám sát
+1. Thêm cron sao lưu hằng ngày lúc 2h sáng:
+   ```bash
+   crontab -e
+   # 0 2 * * * cd /home/<user>/chat-tlu && ./scripts/backup.sh >> backups/backup.log 2>&1
+   ```
+   Khôi phục: chép `backups/<ngày>/app.db` về `Backend/app.db`; với Qdrant, upload file snapshot qua
+   `POST /collections/nckh_docs/snapshots/upload` (hoặc giao diện Qdrant Dashboard).
+2. Giám sát: tạo **Uptime check** trong Google Cloud Monitoring trỏ tới `https://yourdomain.com/health`
+   (cần thêm `location /health { proxy_pass http://localhost:8000; }` vào cấu hình Nginx), bật cảnh báo email.
+3. Backend phải chạy **1 worker** (đã đặt sẵn trong Dockerfile): trạng thái crawler, rate limit và semantic cache nằm trong RAM.
 
 ---
 *Kế hoạch này đảm bảo sản phẩm của bạn hoạt động bền bỉ, tốc độ phản hồi cao và bảo mật để sẵn sàng xuất hiện trước Ban giám khảo RE:ACT.*

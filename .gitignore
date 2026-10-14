@@ -44,3 +44,5 @@ benchmark_eval/logs/*
 
 # Logs
 *.log
+Backend/storage/
+backups/

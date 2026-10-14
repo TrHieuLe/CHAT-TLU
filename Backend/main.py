@@ -122,13 +122,34 @@ async def root():
 
 @app.get("/health")
 async def health():
-    from app.rag.qdrant_client_custom import qdrant_client
-    from app.core.config import settings
+    """Kiểm tra DB, Qdrant và cấu hình Gemini. Trả 503 nếu thành phần bắt buộc lỗi (cho uptime check)."""
+    from fastapi.responses import JSONResponse
+    from sqlalchemy import text
+    from app.models.database import engine
+
+    checks: dict = {}
     try:
-        n = qdrant_client.client.get_collection(settings.COLLECTION_NAME).points_count
-    except Exception:
-        n = 0
-    return {"status": "healthy", "qdrant_chunks": n}
+        async with engine.connect() as conn:
+            await conn.execute(text("SELECT 1"))
+        checks["database"] = "ok"
+    except Exception as e:
+        checks["database"] = f"error: {e.__class__.__name__}"
+
+    try:
+        info = await chat._async.get_collection(settings.QDRANT_COLLECTION)
+        checks["qdrant"] = "ok"
+        checks["qdrant_chunks"] = info.points_count
+    except Exception as e:
+        checks["qdrant"] = f"error: {e.__class__.__name__}"
+
+    checks["gemini_key"] = "ok" if (settings.GOOGLE_API_KEY or settings.GEMINI_API_KEY) else "missing"
+    checks["admin_key"] = "ok" if settings.ADMIN_API_KEY else "missing"
+
+    healthy = checks["database"] == "ok" and checks["qdrant"] == "ok" and checks["gemini_key"] == "ok"
+    return JSONResponse(
+        status_code=200 if healthy else 503,
+        content={"status": "healthy" if healthy else "unhealthy", "version": "3.1.0", **checks},
+    )
 
 
 if __name__ == "__main__":
