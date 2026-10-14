@@ -22,10 +22,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-import os
-_MODEL_NAME = r"C:\Users\ngtan\.cache\huggingface\hub\models--BAAI--bge-m3\snapshots\5617a9f61b028005a4858fdac845db406aefb181"
-if not os.path.exists(_MODEL_NAME):
-    _MODEL_NAME = "BAAI/bge-m3"
+from app.core.config import settings
+
+_MODEL_NAME = settings.EMBEDDING_MODEL
 _MAX_LENGTH = 8192  # BGE-M3 max sequence length (tokens)
 _DEFAULT_BATCH_SIZE = 16
 

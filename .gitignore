@@ -1,36 +1,46 @@
 # Python
-Backend/venv/
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
 .env
 
-# Node
-Frontend/node_modules/
+# Node / Next.js
 node_modules/
 .next/
 dist/
 build/
+*.tsbuildinfo
+.env.local
 
-# Local data / db
-Backend/app.db
+# Dữ liệu cục bộ: SQLite, vector DB, bản export
+*.db
+*.db-journal
+Backend/qdrant_storage/
+Backend/qdrant_storage_export_*
+Backend/app_export_*
+chroma_db/
 
-# Editor
+# Dữ liệu sinh ra khi chạy
+Backend/data/crawled/
+Backend/data/images/uploads/
+Backend/app/data/images/uploads/
+Backend/data/tmp_*
+Backend/scripts/.cache/
+Backend/chat_response.txt
+benchmark_eval/logs/*
+!benchmark_eval/logs/benchmark_summary.md
+
+# Binary
+*.exe
+
+# Editor / OS
 .vscode/
 .idea/
+.DS_Store
 
 # Logs
 *.log
-
-# OS
-.DS_Store
-
-# Frontend env
-Frontend/.env.local
-.env.local
-
-# Vector DB / local indexes
-Backend/chroma_db/
-chroma_db/

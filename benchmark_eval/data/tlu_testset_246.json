@@ -1,0 +1,1997 @@
+[
+  {
+    "id": 1,
+    "question": "Học phí trường là bao nhiêu?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "admission/ChiTieu.txt",
+      "student_life/KyTucXa.txt"
+    ]
+  },
+  {
+    "id": 2,
+    "question": "Các chứng chỉ ngoại ngữ được tham chiếu có trình độ tương đương",
+    "ground_truth": [
+      "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf",
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/ChiTieu.txt",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 3,
+    "question": "Các cơ sở tổ chức cấp chứng chỉ tiếng Anh quốc tế được công nhận",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/ChiTieu.txt",
+      "admission/DiemChuan.txt",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 4,
+    "question": "In ra bảng Các chứng chỉ ngoại ngữ được tham chiếu có trình độ tương đương đi",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/ChiTieu.txt"
+    ]
+  },
+  {
+    "id": 5,
+    "question": "in ra bảng Các cơ sở tổ chức cấp chứng chỉ tiếng Anh quốc tế được công nhận đi",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "introduce.txt",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 6,
+    "question": "In ra bảng Các chứng chỉ ngoại ngữ được tham chiếu có trình độ tương đương đi",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/ChiTieu.txt"
+    ]
+  },
+  {
+    "id": 7,
+    "question": "Học phí trường là bao nhiêu?",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 8,
+    "question": "hocj phí trường là bao nhiêu",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 9,
+    "question": "Các chứng chỉ ngoại ngữ được tham chiếu có trình độ tương đương",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 10,
+    "question": "Các cơ sở tổ chức cấp chứng chỉ tiếng Anh quốc tế được công nhận",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 11,
+    "question": "Học phí ngành công nghệ thông tin trường đại học thủy lợi là bao nhiêu",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 12,
+    "question": "Học phí trường là bao nhiêu?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 13,
+    "question": "Các chứng chỉ ngoại ngữ được tham chiếu có trình độ tương đương",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 14,
+    "question": "Các cơ sở tổ chức cấp chứng chỉ tiếng Anh quốc tế được công nhận",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 15,
+    "question": "hãy in ảnh Các cơ sở tổ chức cấp chứng chỉ tiếng Anh quốc tế được công nhận",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 16,
+    "question": "Các cơ sở tổ chức cấp chứng chỉ tiếng Anh quốc tế được công nhận",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 17,
+    "question": "Các chứng chỉ ngoại ngữ được tham chiếu có trình độ tương đương",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 18,
+    "question": "Điều kiện tốt nghiệp gồm những gì?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "SuKienSinhVien.txt",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 19,
+    "question": "Các cơ sở tổ chức cấp chứng chỉ tiếng Anh quốc tế được công nhận",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 20,
+    "question": "Các chứng chỉ ngoại ngữ được tham chiếu có trình độ tương đương",
+    "ground_truth": [
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 21,
+    "question": "TRường đại học thủy lợi thành lập năm bao nhiêu",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "SuKienSinhVien.txt",
+      "TATC.docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 22,
+    "question": "tRƯỜNG có bao nhiêu cơ sở",
+    "ground_truth": [
+      "TATC.docx",
+      "admission/ChiTieu.txt",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 23,
+    "question": "Trường có bao nhiêu cơ sở ý",
+    "ground_truth": [
+      "TATC.docx",
+      "introduce.txt",
+      "student_life/KyTucXa.txt"
+    ]
+  },
+  {
+    "id": 24,
+    "question": "Tôi học ngành công nghệ thông tin và được học bổng loại giỏi với 20 tín chỉ thì tôi được bao nhiêu tiền",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 25,
+    "question": "Học phí trường là bao nhiêu?",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 26,
+    "question": "Cho tôi 1 vài quy chế về điểm rèn luyện đi",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx"
+    ]
+  },
+  {
+    "id": 27,
+    "question": "quy đổi điểm từ các chứng chỉ Tiếng Anh quốc tế",
+    "ground_truth": [
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 28,
+    "question": "Chỉ tiêu của trường đại học thủy lợi",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "admission/ChiTieu.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 29,
+    "question": "Chỉ tiêu của trường đại học thủy lợi khoa công nghệ thông tin",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "admission/ChiTieu.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 30,
+    "question": "Yêu cầu về trình độ tiếng Anh của sinh viên sau khi kết thúc năm học thứ nhất và năm học thứ hai",
+    "ground_truth": [
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 31,
+    "question": "Trường đại học thủy lợi có bao nhiêu cơ sở",
+    "ground_truth": [
+      "introduce.txt",
+      "student_life/CauLacBo.txt",
+      "student_life/KyTucXa.txt"
+    ]
+  },
+  {
+    "id": 32,
+    "question": "Cho tôi 1 vài thông tin về thư viện đại học thủy lợi",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "services/ThuVien.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 33,
+    "question": "Mật khẩu wifi thư viện đại học thủy lợi là gì",
+    "ground_truth": [
+      "TATC.docx",
+      "services/ThuVien.txt",
+      "services/Wifi.txt"
+    ]
+  },
+  {
+    "id": 34,
+    "question": "Mật khẩu wifi tầng 2 tòa B5 là gì",
+    "ground_truth": [
+      "TATC.docx",
+      "services/Wifi.txt",
+      "student_life/KyTucXa.txt"
+    ]
+  },
+  {
+    "id": 35,
+    "question": "Cho tôi quy tắc cộng điểm rèn luyện của đại học thủy lợi",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 36,
+    "question": "Cho tôi quy chế tính điểm bằng chữ",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 37,
+    "question": "Cho tôi chỉ tiêu tất cả các ngành của trường đại học thủy lợi đi",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "admission/ChiTieu.txt",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 38,
+    "question": "Tôi được 5 môn A 3 tín và 2 môn B 3 tín thì GPA của tôi là bao nhiêu",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 39,
+    "question": "Tiêu chí lấy điểm để xét học bổng của trường đại học thủy lợi là như nào",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "TA.docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 40,
+    "question": "đưa ra ví dụ cụ thể đi",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "QĐ đánh giá KQRL .docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 41,
+    "question": "ví dụ cụ thể tính điểm xét học bổng cơ mà",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 42,
+    "question": "điểm chuẩn ngành công nghệ thông tin là bao nhiêu điểm",
+    "ground_truth": [
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 43,
+    "question": "đIỂM chuẩn ngành an ninh mạng là bao nhiêu điểm",
+    "ground_truth": [
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 44,
+    "question": "Ngành trí tuệ nhân tạo thì sao",
+    "ground_truth": [
+      "admission/ChiTieu.txt",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 45,
+    "question": "Học phí trường là bao nhiêu?",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 46,
+    "question": "Hãy in lại cho tôi ảnh tôi vừa gửi bạn",
+    "ground_truth": [
+      "TA.docx",
+      "TATC.docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 47,
+    "question": "Bạn in ra được logo của trường đại học thủy lợi không",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 48,
+    "question": "Điều kiện tốt nghiệp gồm những gì?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "SuKienSinhVien.txt"
+    ]
+  },
+  {
+    "id": 49,
+    "question": "Học phí trường là bao nhiêu?",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 50,
+    "question": "Các chứng chỉ ngoại ngữ được tham chiếu có trình độ tương đương",
+    "ground_truth": [
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 51,
+    "question": "ĐIểm gpa bao nhiêu thì mới đươc xuất sắc",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 52,
+    "question": "Quy đổi điểm chứng chỉ tiếng anh quốc tế",
+    "ground_truth": [
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 53,
+    "question": "in ảnh Quy đổi điểm các chứng chỉ tiếng Anh quốc tế sang thang điểm 10",
+    "ground_truth": [
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 54,
+    "question": "hãy thay số cụ thể cho tôi",
+    "ground_truth": [
+      "TATC.docx",
+      "student_life/CauLacBo.txt",
+      "student_life/KyTucXa.txt"
+    ]
+  },
+  {
+    "id": 55,
+    "question": "QUy đổi diểm tiếng anh quốc tế",
+    "ground_truth": [
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 56,
+    "question": "cho tôi biết thông tin về trường Đại học Thủy Lợi",
+    "ground_truth": [
+      "introduce.txt",
+      "services/ThuVien.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 57,
+    "question": "Học phí trường là bao nhiêu?",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 58,
+    "question": "Trường hợp nào thì sinh viên bị hạ bằng",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "SuKienSinhVien.txt"
+    ]
+  },
+  {
+    "id": 59,
+    "question": "Giả thích cho tôi ý 1 đi",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 60,
+    "question": "Học phí trường là bao nhiêu?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "TATC.docx",
+      "admission/ChiTieu.txt"
+    ]
+  },
+  {
+    "id": 61,
+    "question": "Khoa nào là học phí rẻ nhất",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "TATC.docx",
+      "admission/ChiTieu.txt",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 62,
+    "question": "Ý là khối ngành nào có học phí rẻ nhất trường ý",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "admission/ChiTieu.txt",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 63,
+    "question": "Khối ngành KInh tế-quản lý có bao nhiêu ngành",
+    "ground_truth": [
+      "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf",
+      "admission/ChiTieu.txt",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 64,
+    "question": "Khi nào thì sinh viên bị hạ bằng",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "SuKienSinhVien.txt"
+    ]
+  },
+  {
+    "id": 65,
+    "question": "Giải thích cho tôi về cái đầu đi",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "student_life/KyTucXa.txt",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 66,
+    "question": "Trường hợp nào thì sinh viên bị hạ bằng",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "SuKienSinhVien.txt"
+    ]
+  },
+  {
+    "id": 67,
+    "question": "Giải thích cho tôi ý đầu đi",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "TA.docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 68,
+    "question": "Trường hợp nào thì sinh viên bị hạ bằng",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "SuKienSinhVien.txt"
+    ]
+  },
+  {
+    "id": 69,
+    "question": "Giải thích cho tôi ý 1 đi",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "TA.docx"
+    ]
+  },
+  {
+    "id": 70,
+    "question": "Vậy nếu tôi học lực khá thì sẽ không bị điều kiện này hạ bằng à",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "SuKienSinhVien.txt"
+    ]
+  },
+  {
+    "id": 71,
+    "question": "Vậy làm sao để được Gpa xuất sắc giờ",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 72,
+    "question": "Gpa hiện tại của tôi là 3.16 tôi đã học 120/140 tín thì tôi có khả năng được tốt nghiệp loại xuất sắc không",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/ChiTieu.txt"
+    ]
+  },
+  {
+    "id": 73,
+    "question": "Vậy nếu tôi được các tín còn lại đều điểm B thì có bị xuống dưới 3.0 không",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 74,
+    "question": "bị full C thì sao",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 75,
+    "question": "Làm sao để học tốt tại trường đại học thủy lợi",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "SuKienSinhVien.txt",
+      "introduce.txt",
+      "student_life/KyTucXa.txt",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 76,
+    "question": "Hãy cho tôi điểm chuẩn ngành công nghệ thông tin đi",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 77,
+    "question": "Quy chế về điểm rèn luyện là như thế nào ?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 78,
+    "question": "Học phí trường là bao nhiêu?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "TATC.docx",
+      "admission/ChiTieu.txt"
+    ]
+  },
+  {
+    "id": 79,
+    "question": "Giới hạn khối lượng học tập tối thiểu của sinh viên trong một học kỳ là bao nhiêu?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 80,
+    "question": "Khối lượng học tập tối đa sinh viên được đăng ký trong một học kỳ là bao nhiêu?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "QĐ đánh giá KQRL .docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 81,
+    "question": "Điểm chữ A tương ứng với thang điểm 10 là bao nhiêu?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "TA.docx",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 82,
+    "question": "Điểm chữ D tương ứng với thang điểm 10 là bao nhiêu?",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 83,
+    "question": "Điểm F tương ứng với mức điểm nào?",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "TA.docx"
+    ]
+  },
+  {
+    "id": 84,
+    "question": "Sinh viên xếp loại học lực 'Giỏi' khi có điểm trung bình tích lũy hệ 4 là bao nhiêu?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 85,
+    "question": "Sinh viên bị buộc thôi học khi nhận cảnh báo học tập mức mấy?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 86,
+    "question": "Tổng số tín chỉ F tồn đọng vượt quá bao nhiêu thì bị cảnh báo học tập?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 87,
+    "question": "Điều kiện về điểm trung bình tích lũy để xét tốt nghiệp là bao nhiêu?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 88,
+    "question": "Hạng tốt nghiệp bị giảm đi một mức nếu số tín chỉ học lại vượt quá bao nhiêu %?",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 89,
+    "question": "Quy định trình độ tiếng Anh tại QĐ 1315 áp dụng cho đối tượng nào?",
+    "ground_truth": [
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 90,
+    "question": "Sinh viên có IELTS bao nhiêu thì được miễn học tất cả học phần tiếng Anh năm thứ nhất?",
+    "ground_truth": [
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 91,
+    "question": "Mức điểm IELTS 4.5 tương đương bao nhiêu điểm cho kỹ năng nâng cao 1?",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 92,
+    "question": "Yêu cầu trình độ tiếng Anh khi kết thúc năm học thứ nhất của SV chương trình tiên tiến là gì?",
+    "ground_truth": [
+      "TA.docx"
+    ]
+  },
+  {
+    "id": 93,
+    "question": "Yêu cầu trình độ tiếng Anh khi kết thúc năm học thứ hai của SV chương trình tiên tiến là gì?",
+    "ground_truth": [
+      "TA.docx"
+    ]
+  },
+  {
+    "id": 94,
+    "question": "Chứng chỉ TOEIC 480 tương đương với bao nhiêu điểm cho kỹ năng nâng cao 1?",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 95,
+    "question": "Nếu sinh viên có IELTS 4.0 thì có được miễn học phần tiếng Anh nào không?",
+    "ground_truth": [
+      "TA.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 96,
+    "question": "Học phần Giáo dục thể chất có tính vào điểm trung bình tích lũy không?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 97,
+    "question": "Sinh viên tốt nghiệp sau 3 tháng kể từ khi đủ điều kiện có được nhận bằng không?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "SuKienSinhVien.txt",
+      "TA.docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 98,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/ChiTieu.txt"
+    ]
+  },
+  {
+    "id": 99,
+    "question": "Sinh viên có được học 3 chương trình cùng lúc không?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "TATC.docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 100,
+    "question": "GPA 3.65 xếp hạng tốt nghiệp loại gì?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 101,
+    "question": "Điểm chữ I là gì?",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "TA.docx"
+    ]
+  },
+  {
+    "id": 102,
+    "question": "Học phần thực hành có cần thi kết thúc học phần không?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "TATC.docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 103,
+    "question": "Học lực yếu có bị buộc thôi học không?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ đánh giá KQRL .docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 104,
+    "question": "Quy chế về điểm rèn luyện là như thế nào ?",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx"
+    ]
+  },
+  {
+    "id": 105,
+    "question": "Sinh viên đạt Giải Nhì Olympic Quốc gia được công nhận bao nhiêu điểm thi kết thúc học phần?",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ đánh giá KQRL .docx"
+    ]
+  },
+  {
+    "id": 106,
+    "question": "Kết quả giải Olympic được sử dụng để xét học bổng cho kỳ nào?",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ đánh giá KQRL .docx"
+    ]
+  },
+  {
+    "id": 107,
+    "question": "Sinh viên thuộc hộ cận nghèo là người dân tộc thiểu số được miễn hay giảm học phí?",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ ve HBKKHT, HBCS .docx",
+      "TATC.docx",
+      "student_life/KyTucXa.txt"
+    ]
+  },
+  {
+    "id": 108,
+    "question": "Sinh viên thuộc hộ cận nghèo là người dân tộc thiểu số được miễn hay giảm học phí?",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 109,
+    "question": "Sinh viên nộp bằng tốt nghiệp Trung cấp ngành CNTT được công nhận bao nhiêu điểm Tin học cơ bản?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 110,
+    "question": "Nếu nộp chứng chỉ MOS, điểm môn Tin học cơ bản được công nhận là bao nhiêu?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ 1089 thi OLP môn học .docx"
+    ]
+  },
+  {
+    "id": 111,
+    "question": "Có bao nhiêu module MOS cần đạt để được miễn thi CĐR CNTT?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 112,
+    "question": "Sinh viên ngành nào không phải thực hiện quy định về CĐR CNTT này?",
+    "ground_truth": [
+      "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf",
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 113,
+    "question": "Sinh viên đạt Giải Nhì và Ba Olympic cấp trường được bao nhiêu điểm quá trình?",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ đánh giá KQRL .docx"
+    ]
+  },
+  {
+    "id": 114,
+    "question": "Học bổng loại Giỏi có giá trị bằng bao nhiêu % học phí?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 115,
+    "question": "Điểm GPA bao nhiêu được coi là học lực loại Giỏi để xét học bổng?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 116,
+    "question": "Sinh viên học văn bằng hai có được xét học bổng KKHT không?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx"
+    ]
+  },
+  {
+    "id": 117,
+    "question": "Công thức tính Điểm xét học bổng KKHT là gì?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx"
+    ]
+  },
+  {
+    "id": 118,
+    "question": "Giá trị học bổng loại Xuất sắc bằng bao nhiêu % mức học phí?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 119,
+    "question": "Học bổng Khuyến khích học tập (KKHT) có mấy mức?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx"
+    ]
+  },
+  {
+    "id": 120,
+    "question": "Các môn học nào không được tính vào điểm trung bình để xét khen thưởng?",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 121,
+    "question": "Số tín chỉ tối thiểu để xét khen thưởng trong một học kỳ là bao nhiêu?",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ ve HBKKHT, HBCS .docx"
+    ]
+  },
+  {
+    "id": 122,
+    "question": "Có bao nhiêu loại danh hiệu khen thưởng định kỳ cuối năm học cho cá nhân?",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx"
+    ]
+  },
+  {
+    "id": 123,
+    "question": "Tổng khối lượng của học phần Tiếng Anh tăng cường là bao nhiêu tín chỉ?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 124,
+    "question": "Đối tượng nào bắt buộc phải học Tiếng Anh tăng cường (TATC)?",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 125,
+    "question": "Cần bao nhiêu tín chỉ tích lũy để lên năm thứ hai nhóm ngành Kỹ thuật?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/ChiTieu.txt"
+    ]
+  },
+  {
+    "id": 126,
+    "question": "Học lực yếu có bị buộc thôi học không?",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 127,
+    "question": "vậy phải làm sao thì mới bị buộc thôi học",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 128,
+    "question": "Học phần thực hành có cần thi kết thúc học phần không?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 129,
+    "question": "Điểm chữ I là gì?",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 130,
+    "question": "GPA 3.65 xếp hạng tốt nghiệp loại gì?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 131,
+    "question": "Sinh viên có được học 3 chương trình cùng lúc không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 132,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 133,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 134,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 135,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 136,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 137,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 138,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 139,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 140,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 141,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 142,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 143,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 144,
+    "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 145,
+    "question": "Điểm chuẩn của trường là bao nhiêu?",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 146,
+    "question": "Cho tôi điểm chuẩn của khoa công nghệ thông tin đi",
+    "ground_truth": [
+      "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf",
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 147,
+    "question": "Quy định về học bổng trường là gì?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx"
+    ]
+  },
+  {
+    "id": 148,
+    "question": "Điều kiện để được xét học bổng khuyến khích học tập?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 149,
+    "question": "đưa ví dụ cụ thể dễ hiểu đi",
+    "ground_truth": [
+      "Quy định về tổ chức thi trực tuyến.docx",
+      "QĐ Khen thưởng - KL .docx",
+      "student_life/KyTucXa.txt"
+    ]
+  },
+  {
+    "id": 150,
+    "question": "Điều kiện để được xét học bổng khuyến khích học tập?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 151,
+    "question": "Điều kiện để được xét học bổng khuyến khích học tập?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 152,
+    "question": "Quy chế thi lại, học lại như thế nào?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 153,
+    "question": "Cho tôi điểm chuẩn khoa kinh tế đi",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 154,
+    "question": "Hướng dẫn cách kết nối Wifi của trường?",
+    "ground_truth": [
+      "Mục lục Sổ tay sinh viên .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "services/Wifi.txt",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 155,
+    "question": "Cho tôi điểm đầu vào của khoa công nghệ thông tin đi",
+    "ground_truth": [
+      "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf",
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 156,
+    "question": "Cho tôi điểm đầu vào của khoa kinh tế đi",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "admission/ChiTieu.txt",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 157,
+    "question": "sinh viên sẽ bị hạ bằng khi nào",
+    "ground_truth": [
+      "Quy định về tổ chức thi trực tuyến.docx",
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ Khen thưởng - KL .docx"
+    ]
+  },
+  {
+    "id": 158,
+    "question": "sinh viên bị hạ bằng tốt nghiệp khi nào",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 159,
+    "question": "giải thích cho tôi ý số 1 đi",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ đánh giá KQRL .docx"
+    ]
+  },
+  {
+    "id": 160,
+    "question": "Quy chế thi lại, học lại như thế nào?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 161,
+    "question": "Điều kiện để được xét học bổng khuyến khích học tập?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 162,
+    "question": "TRường đại học thủy lợi có bao nhiêu cơ sở",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt",
+      "student_life/KyTucXa.txt"
+    ]
+  },
+  {
+    "id": 163,
+    "question": "TRường có những thành tựu nào",
+    "ground_truth": [
+      "QD_1038_16.07.2021_GDTC.docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/ChiTieu.txt",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 164,
+    "question": "Sinh viên bị hạ bằng tốt nghiệp khi nào",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 165,
+    "question": "giải thích cho tôi trường hợp 1 đi",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 166,
+    "question": "Sinh viên bị hạ bằng tốt nghiệp khi nào",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 167,
+    "question": "giải thích cho tôi trường hợp đầu tiên đi",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 168,
+    "question": "giải thích cho tôi trường hợp thứ 2 đi",
+    "ground_truth": [
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "admission/DiemChuan.txt",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 169,
+    "question": "Điều kiện để được xét học bổng khuyến khích học tập?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 170,
+    "question": "Vậy nếu học bổng loại giỏi thì được bao nhiêu",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 171,
+    "question": "Tôi học 20 tín ngành công nghệ thông tin thì được bao nhiêu",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "admission/ChiTieu.txt"
+    ]
+  },
+  {
+    "id": 172,
+    "question": "vậy nếu tôi được học bổng loại xuất sắc thì sao",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 173,
+    "question": "vậy loại khá",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 174,
+    "question": "Vậy học phí trường có tăng theo năm không",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "TATC.docx"
+    ]
+  },
+  {
+    "id": 175,
+    "question": "Chuẩn đầu ra Tiếng Anh quy định như thế nào?",
+    "ground_truth": [
+      "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf",
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "TA.docx"
+    ]
+  },
+  {
+    "id": 176,
+    "question": "Giải thích cho tôi trường hợp đầu đi",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 177,
+    "question": "Quy chế thi lại, học lại như thế nào?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 178,
+    "question": "Giải thích chi tiết cho tôi ý 1",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 179,
+    "question": "sinh viên bị hạ bằng tốt nghiệp khi nào",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 180,
+    "question": "giải thích cho tôi ý 1 đi",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 181,
+    "question": "Sinh viên bị hạ bằng tốt nghiệp khi nào",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 182,
+    "question": "giải thích cho tôi ý 1 đi",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ đánh giá KQRL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 183,
+    "question": "SInh viên bị hạ bằng tốt nghiệp khi nào",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 184,
+    "question": "giải thích cho tôi ý 1 đi",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 185,
+    "question": "Điều kiện để được xét học bổng khuyến khích học tập?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 186,
+    "question": "sinh viên chất lượng tiên tiến không được xét hocj bổng à",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 187,
+    "question": "vậy hãy cho tôi điểm của khoa công nghệ thông tin đi",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ đánh giá KQRL .docx",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 188,
+    "question": "hãy cho tôi quy đổi điểm tiếng anh quốc tế đi",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "TA.docx"
+    ]
+  },
+  {
+    "id": 189,
+    "question": "Quy chế thi lại, học lại như thế nào?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 190,
+    "question": "giải thích cho tôi ý 1 đi",
+    "ground_truth": [
+      "Mục lục Sổ tay sinh viên .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "training/DangKyTinChi.txt"
+    ]
+  },
+  {
+    "id": 191,
+    "question": "hãy cho tôi điểm đầu vào của khoa công nghệ thông tin đi",
+    "ground_truth": [
+      "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf",
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 192,
+    "question": "Sinh viên bị hạ bằng tốt nghiệp khi nào",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 193,
+    "question": "Giải thích cho tôi ý 1 đi",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 194,
+    "question": "Vậy là sinh viên loại Khá học lại cũng không sao à",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 195,
+    "question": "Điều kiện để được xét học bổng khuyến khích học tập?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx",
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 196,
+    "question": "Cho tôi điểm đầu vào của khoa kinh tế",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "admission/ChiTieu.txt",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 197,
+    "question": "Ngành nào có điểm đầu vào cao nhất khoa kinh tế",
+    "ground_truth": [
+      "QĐ 1089 thi OLP môn học .docx",
+      "admission/ChiTieu.txt",
+      "admission/DiemChuan.txt"
+    ]
+  },
+  {
+    "id": 198,
+    "question": "quy đổi điểm tiếng anh quốc tế",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "table_docx_8815c2f8_3_1d2d6ca9.png",
+      "table_docx_98e7b276_3_b2a0572e.png",
+      "table_docx_c7bba307_3_3b229c78.png"
+    ]
+  },
+  {
+    "id": 199,
+    "question": "Miễn học, miễn thi và công nhận điểm đối với học phần Tin học cơ bản",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 200,
+    "question": "Sinh viên đủ điều kiện miễn thi chuẩn đầu ra công nghệ thông tin (như quy định tại\nĐiều 3) hoặc đạt chuẩn đầu ra công nghệ thông tin do Trường Đại học Thủy lợi tổ\n1chức sát hạch sẽ được Nhà trường xem xét miễn học, miễn thi, chuyển và công nhận\nđiểm đối với học phần Tin học cơ bản trong chương trình đào tạo, cụ thể như nào",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf"
+    ]
+  },
+  {
+    "id": 201,
+    "question": "Trường đại học thủy lợi",
+    "ground_truth": [
+      "anhtruong.docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 202,
+    "question": "Cho tôi ảnh trường đại học thủy lợi đi",
+    "ground_truth": [
+      "QD_1038_16.07.2021_GDTC.docx",
+      "anhtruong.docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 203,
+    "question": "cho tôi ảnh trường đại học thủy lợi",
+    "ground_truth": [
+      "QD_1038_16.07.2021_GDTC.docx",
+      "anhtruong.docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 204,
+    "question": "cho tôi ảnh trường đại học phenika",
+    "ground_truth": [
+      "QD_1038_16.07.2021_GDTC.docx",
+      "QĐ Khen thưởng - KL .docx",
+      "anhtruong.docx"
+    ]
+  },
+  {
+    "id": 205,
+    "question": "Trường đại học bách khoa Hà NỘi",
+    "ground_truth": [
+      "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+      "QĐ ve HBKKHT, HBCS .docx",
+      "anhtruong.docx",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 206,
+    "question": "in cho tôi ảnh trường đại học thủy lợi",
+    "ground_truth": [
+      "QD_1038_16.07.2021_GDTC.docx",
+      "anhtruong.docx",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 207,
+    "question": "hãy cho tôi ảnh trường đại học bách khoa",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "anhtruong.docx",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 208,
+    "question": "cho tôi ảnh của trường đại học thủy lợi",
+    "ground_truth": [
+      "QD_1038_16.07.2021_GDTC.docx",
+      "anhtruong.docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 209,
+    "question": "ảnh khác đi",
+    "ground_truth": [
+      "anhtruong.docx",
+      "table_docx_573d20b0_2_1dd4ee32.png",
+      "table_docx_a3d5c08d_2_c1f44df9.png",
+      "table_docx_b4db50d2_2_6fd4138e.png",
+      "table_docx_e70c6d37_2_5103b676.png"
+    ]
+  },
+  {
+    "id": 210,
+    "question": "hãy in cho tôi ảnh trường đại học bách khoa Hà NỘi",
+    "ground_truth": [
+      "anhtruong.docx",
+      "table_docx_83d65f78_0_d6eb5bc2.png",
+      "table_docx_e70c6d37_2_5103b676.png"
+    ]
+  },
+  {
+    "id": 211,
+    "question": "in cho tôi ảnh đại học phenila",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+      "anhtruong.docx"
+    ]
+  },
+  {
+    "id": 212,
+    "question": "phenika mà",
+    "ground_truth": [
+      "Quy định về tổ chức thi trực tuyến.docx",
+      "QĐ Khen thưởng - KL .docx",
+      "anhtruong.docx"
+    ]
+  },
+  {
+    "id": 213,
+    "question": "cho tôi bảng quy đổi điểm tiếng anh quốc tế",
+    "ground_truth": [
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "table_docx_8815c2f8_3_1d2d6ca9.png",
+      "table_docx_98e7b276_3_b2a0572e.png",
+      "table_docx_cd9e6e84_3_99ff145b.png"
+    ]
+  },
+  {
+    "id": 214,
+    "question": "cho tôi ảnh đại học thủy lợi",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "anhtruong.docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 215,
+    "question": "đại học thủy lợi",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "anhtruong.docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 216,
+    "question": "cho tôi ảnh trường đại học thủy lợi",
+    "ground_truth": [
+      "QD_1038_16.07.2021_GDTC.docx",
+      "anhtruong.docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 217,
+    "question": "Cho tôi thông tin về đại học thủy lợi",
+    "ground_truth": [
+      "Mục lục Sổ tay sinh viên .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "anhtruong.docx",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 218,
+    "question": "cho tôi thông tin về đại học thủy lợi",
+    "ground_truth": [
+      "Mục lục Sổ tay sinh viên .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "anhtruong.docx",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 219,
+    "question": "cho tôi thông tin về đại học thủy lợi",
+    "ground_truth": [
+      "Mục lục Sổ tay sinh viên .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "anhtruong.docx",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 220,
+    "question": "cho tôi thông tin về đại học thủy lợi",
+    "ground_truth": [
+      "Mục lục Sổ tay sinh viên .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "anhtruong.docx",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 221,
+    "question": "cho tôi thông tin về trường",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "QĐ về Học phí final (25-10-2021).docx"
+    ]
+  },
+  {
+    "id": 222,
+    "question": "cho tôi thông tin về trường đại học thủy lợi",
+    "ground_truth": [
+      "Mục lục Sổ tay sinh viên .docx",
+      "QĐ về Học phí final (25-10-2021).docx",
+      "anhtruong.docx",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 223,
+    "question": "Quy chế thi lại, học lại như thế nào?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 224,
+    "question": "tòa nhà c1 ở đâu",
+    "ground_truth": [
+      "student_life/KyTucXa.txt",
+      "toa.docx"
+    ]
+  },
+  {
+    "id": 225,
+    "question": "tòa nhà c2 ở đâu",
+    "ground_truth": [
+      "student_life/KyTucXa.txt",
+      "toa.docx"
+    ]
+  },
+  {
+    "id": 226,
+    "question": "ẢNh trường đại học thủy lợi đâu",
+    "ground_truth": [
+      "QĐ về Học phí final (25-10-2021).docx",
+      "anhtruong.docx",
+      "introduce.txt"
+    ]
+  },
+  {
+    "id": 227,
+    "question": "ảnh trường phenika",
+    "ground_truth": [
+      "QĐ Khen thưởng - KL .docx",
+      "anhtruong.docx",
+      "table_docx_573d20b0_2_1dd4ee32.png",
+      "table_docx_e70c6d37_2_5103b676.png"
+    ]
+  },
+  {
+    "id": 228,
+    "question": "tòa c1 ở đâu",
+    "ground_truth": [
+      "student_life/KyTucXa.txt",
+      "toa.docx"
+    ]
+  },
+  {
+    "id": 229,
+    "question": "Trường đại học thủy lợi có bao nhiêu cơ sở",
+    "ground_truth": [
+      "anhtruong.docx",
+      "introduce.txt",
+      "student_life/KyTucXa.txt"
+    ]
+  },
+  {
+    "id": 230,
+    "question": "Cách tính điểm xét học bổng như thế nào",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx"
+    ]
+  },
+  {
+    "id": 231,
+    "question": "Quy chế thi lại, học lại như thế nào?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 232,
+    "question": "Điều kiện để được xét học bổng khuyến khích học tập?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx"
+    ]
+  },
+  {
+    "id": 233,
+    "question": "Quy chế thi lại, học lại như thế nào?",
+    "ground_truth": [
+      "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+    ]
+  },
+  {
+    "id": 234,
+    "question": "cho tôi ảnh trường đại học thủy lợi",
+    "ground_truth": [
+      "QD_1038_16.07.2021_GDTC.docx",
+      "anhtruong.docx",
+      "introduce.txt",
+      "student_life/CauLacBo.txt"
+    ]
+  },
+  {
+    "id": 235,
+    "question": "Điều kiện để được xét học bổng khuyến khích học tập?",
+    "ground_truth": [
+      "QĐ ve HBKKHT, HBCS .docx"
+    ]
+  },
+  {
+    "id": 236,
+    "question": "Chuẩn đầu ra Tiếng Anh quy định như thế nào?",
+    "ground_truth": [
+      "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf",
+      "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+      "table_docx_61140543_3_156c1610.png"
+    ]
+  }
+]

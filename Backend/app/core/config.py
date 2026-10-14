@@ -15,6 +15,8 @@ class Settings(BaseSettings):
     COLLECTION_NAME: str = "nckh_docs"
     UNSPLASH_ACCESS_KEY: str | None = None
     EMBEDDING_VECTOR_SIZE: int = 1024
+    # Tên model trên HuggingFace hub (dùng cache ~/.cache/huggingface) hoặc đường dẫn thư mục model
+    EMBEDDING_MODEL: str = "BAAI/bge-m3"
 
     CHUNK_SIZE: int = 800
     OVERLAP: int = 100

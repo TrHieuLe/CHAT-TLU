@@ -1,0 +1,170 @@
+[
+  {
+    "abbr": "đrl",
+    "full": "điểm rèn luyện",
+    "sample_q": "đrl bao nhiêu thì được học bổng xuất sắc?",
+    "doc": "QĐ đánh giá KQRL .docx"
+  },
+  {
+    "abbr": "drl",
+    "full": "điểm rèn luyện",
+    "sample_q": "cách cộng drl khi tham gia hoạt động đoàn?",
+    "doc": "QĐ đánh giá KQRL .docx"
+  },
+  {
+    "abbr": "cpa",
+    "full": "điểm trung bình tích lũy CPA",
+    "sample_q": "cpa dưới bao nhiêu thì bị cảnh báo học vụ?",
+    "doc": "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  },
+  {
+    "abbr": "gpa",
+    "full": "điểm trung bình học kỳ GPA",
+    "sample_q": "gpa học kỳ 1 tính như thế nào?",
+    "doc": "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  },
+  {
+    "abbr": "kktx",
+    "full": "ký túc xá",
+    "sample_q": "sinh viên năm nhất có được ưu tiên ở kktx không?",
+    "doc": "student_life/KyTucXa.txt"
+  },
+  {
+    "abbr": "ktx",
+    "full": "ký túc xá",
+    "sample_q": "thủ tục đăng ký phòng ở ktx cơ sở Hà Nội?",
+    "doc": "student_life/KyTucXa.txt"
+  },
+  {
+    "abbr": "kltn",
+    "full": "khóa luận tốt nghiệp",
+    "sample_q": "điều kiện làm kltn ngành công nghệ thông tin?",
+    "doc": "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  },
+  {
+    "abbr": "đatn",
+    "full": "đồ án tốt nghiệp",
+    "sample_q": "số tín chỉ tích lũy tối thiểu để nhận đatn?",
+    "doc": "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  },
+  {
+    "abbr": "datn",
+    "full": "đồ án tốt nghiệp",
+    "sample_q": "hạn nộp datn học kỳ cuối là ngày nào?",
+    "doc": "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  },
+  {
+    "abbr": "gvcn",
+    "full": "giảng viên chủ nhiệm",
+    "sample_q": "cách liên hệ với gvcn lớp K64-KTPM?",
+    "doc": "DS giáo viên chủ nhiệm kiêm cố vấn học tập Đại học Thủy lợi.pdf"
+  },
+  {
+    "abbr": "bcs",
+    "full": "ban cán sự lớp",
+    "sample_q": "bcs lớp có quyền chấm điểm rèn luyện không?",
+    "doc": "QĐ đánh giá KQRL .docx"
+  },
+  {
+    "abbr": "pđt",
+    "full": "phòng đào tạo",
+    "sample_q": "địa chỉ văn phòng pđt ở nhà nào?",
+    "doc": "DonViQuanLy.txt"
+  },
+  {
+    "abbr": "pdt",
+    "full": "phòng đào tạo",
+    "sample_q": "xin cấp bảng điểm tại pdt cần thủ tục gì?",
+    "doc": "DonViQuanLy.txt"
+  },
+  {
+    "abbr": "cthssv",
+    "full": "phòng chính trị và công tác sinh viên",
+    "sample_q": "phòng cthssv giải quyết các thủ tục gì cho sinh viên?",
+    "doc": "DonViQuanLy.txt"
+  },
+  {
+    "abbr": "hp",
+    "full": "học phần",
+    "sample_q": "quy định đăng ký rút bớt hp trong học kỳ?",
+    "doc": "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  },
+  {
+    "abbr": "ctđt",
+    "full": "chương trình đào tạo",
+    "sample_q": "ctđt ngành công nghệ thông tin gồm bao nhiêu tín chỉ?",
+    "doc": "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf"
+  },
+  {
+    "abbr": "ctdt",
+    "full": "chương trình đào tạo",
+    "sample_q": "xem khung ctdt khóa 64 ở đâu?",
+    "doc": "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf"
+  },
+  {
+    "abbr": "tkm",
+    "full": "thi kết thúc học phần",
+    "sample_q": "điều kiện để được dự thi tkm là gì?",
+    "doc": "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  },
+  {
+    "abbr": "khht",
+    "full": "kế hoạch học tập",
+    "sample_q": "thời gian điều chỉnh khht đầu mỗi kỳ?",
+    "doc": "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  },
+  {
+    "abbr": "nckh",
+    "full": "nghiên cứu khoa học",
+    "sample_q": "sinh viên tham gia nckh được cộng bao nhiêu điểm?",
+    "doc": "QĐ 1089 thi OLP môn học .docx"
+  },
+  {
+    "abbr": "cntt",
+    "full": "công nghệ thông tin",
+    "sample_q": "chuẩn đầu ra tiếng anh ngành cntt là bao nhiêu?",
+    "doc": "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf"
+  },
+  {
+    "abbr": "ktpm",
+    "full": "kỹ thuật phần mềm",
+    "sample_q": "học phí ngành ktpm một tín chỉ là bao nhiêu?",
+    "doc": "QĐ về Học phí final (25-10-2021).docx"
+  },
+  {
+    "abbr": "khmt",
+    "full": "khoa học máy tính",
+    "sample_q": "ngành khmt đào tạo những định hướng nào?",
+    "doc": "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf"
+  },
+  {
+    "abbr": "httt",
+    "full": "hệ thống thông tin",
+    "sample_q": "số tín chỉ ngành httt là bao nhiêu?",
+    "doc": "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf"
+  },
+  {
+    "abbr": "attt",
+    "full": "an toàn thông tin",
+    "sample_q": "chuẩn đầu ra tin học ngành attt?",
+    "doc": "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf"
+  },
+  {
+    "abbr": "bldt",
+    "full": "bảo lưu đào tạo",
+    "sample_q": "thời gian bldt tối đa cho một sinh viên là bao lâu?",
+    "doc": "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  },
+  {
+    "abbr": "xxtn",
+    "full": "xét công nhận tốt nghiệp",
+    "sample_q": "mỗi năm trường tổ chức mấy đợt xxtn?",
+    "doc": "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  },
+  {
+    "abbr": "tlu",
+    "full": "Trường Đại học Thủy Lợi",
+    "sample_q": "mạng wifi tlu có mật khẩu là gì?",
+    "doc": "services/Wifi.txt"
+  }
+]
