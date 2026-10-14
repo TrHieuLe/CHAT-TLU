@@ -22,6 +22,8 @@ import {
   Globe,
   Sparkles,
   FileSpreadsheet,
+  KeyRound,
+  LogOut,
 } from "lucide-react";
 import {
   getDocuments,
@@ -31,11 +33,98 @@ import {
   buildDocumentReferenceUrl,
   triggerCrawler,
   getCrawlerStatus,
+  getAdminKey,
+  setAdminKey,
+  verifyAdminKey,
+  ADMIN_AUTH_EVENT,
 } from "@/lib/api";
 import { DocumentItem, DocumentStats, CrawlerStatus, CrawlJob } from "@/lib/types";
 import DocPreviewModal from "@/components/chat/DocPreviewModal";
 
 export default function AdminPage() {
+  // null = đang kiểm tra sessionStorage (tránh nháy màn đăng nhập khi đã có key)
+  const [authed, setAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    setAuthed(Boolean(getAdminKey()));
+    const onAuthRequired = () => setAuthed(false);
+    window.addEventListener(ADMIN_AUTH_EVENT, onAuthRequired);
+    return () => window.removeEventListener(ADMIN_AUTH_EVENT, onAuthRequired);
+  }, []);
+
+  if (authed === null) return null;
+  if (!authed) return <AdminLogin onSuccess={() => setAuthed(true)} />;
+  return (
+    <AdminDashboard
+      onLogout={() => {
+        setAdminKey("");
+        setAuthed(false);
+      }}
+    />
+  );
+}
+
+function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
+  const [key, setKey] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!key.trim()) return;
+    setChecking(true);
+    setError(null);
+    const err = await verifyAdminKey(key.trim());
+    setChecking(false);
+    if (err) {
+      setError(err);
+      return;
+    }
+    setAdminKey(key.trim());
+    onSuccess();
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+      <form
+        onSubmit={handleSubmit}
+        className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-4"
+      >
+        <div className="flex items-center gap-2">
+          <KeyRound className="w-5 h-5 text-blue-600" />
+          <h1 className="text-lg font-bold text-slate-900">Đăng nhập quản trị</h1>
+        </div>
+        <p className="text-xs text-slate-500">Nhập admin key (biến ADMIN_API_KEY của backend).</p>
+        <input
+          type="password"
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          autoFocus
+          placeholder="Admin key"
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        {error && (
+          <p className="text-xs text-red-600 flex items-center gap-1">
+            <AlertCircle className="w-3.5 h-3.5" />
+            {error}
+          </p>
+        )}
+        <button
+          type="submit"
+          disabled={checking || !key.trim()}
+          className="w-full py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg"
+        >
+          {checking ? "Đang kiểm tra..." : "Đăng nhập"}
+        </button>
+        <Link href="/" className="block text-center text-xs text-slate-500 hover:text-blue-600">
+          Về phòng chat
+        </Link>
+      </form>
+    </div>
+  );
+}
+
+function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [stats, setStats] = useState<DocumentStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -262,6 +351,14 @@ export default function AdminPage() {
               <ArrowLeft className="w-4 h-4" />
               <span>Về phòng chat</span>
             </Link>
+
+            <button
+              onClick={onLogout}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              title="Đăng xuất quản trị"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
       </header>

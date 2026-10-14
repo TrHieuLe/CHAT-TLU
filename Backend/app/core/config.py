@@ -74,6 +74,13 @@ class Settings(BaseSettings):
     TLU_CRAWL_BASE_URL: str = "https://tlu.edu.vn"
     TLU_CRAWL_CATEGORY_IDS: list[int] = [2010]   # category "Thông báo"
     TLU_CRAWL_TIMEOUT_SECONDS: float = 20.0
+    # Bảo mật
+    ADMIN_API_KEY: str | None = None        # bắt buộc để dùng endpoint quản trị (header X-Admin-Key)
+    ADMIN_AUTH_DISABLED: bool = False       # chỉ bật cho test/dev
+    CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+    CORS_ORIGIN_REGEX: str | None = None    # vd: https://.*\.trycloudflare\.com
+    RATE_LIMIT_PER_MINUTE: int = 20         # số câu hỏi / phút / (IP + user), 0 = tắt
+    MAX_UPLOAD_MB: int = 50
 
 
 settings = Settings()

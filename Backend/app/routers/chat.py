@@ -498,9 +498,10 @@ async def _stream_followup_about_last_image(
 
 # ─── API Endpoints ───────────────────────────────────────────────────────────
 
-from app.core.auth import get_current_user_id
+from app.core.auth import get_current_user_id, require_admin
+from app.core.rate_limit import check_rate_limit
 
-@router.post("/stream")
+@router.post("/stream", dependencies=[Depends(check_rate_limit)])
 async def chat_stream(
     req: ChatRequest,
     db: AsyncSession = Depends(get_db),
@@ -557,7 +558,7 @@ async def chat_stream(
     )
 
 
-@router.post("/image")
+@router.post("/image", dependencies=[Depends(check_rate_limit)])
 async def analyze_uploaded_image(
     session_id: str = Form(...),
     question: str = Form(""),
@@ -663,7 +664,7 @@ async def submit_feedback(req: ChatFeedbackRequest, db: AsyncSession = Depends(g
     return {"ok": True, "id": fb.id}
 
 
-@router.get("/cache/stats")
+@router.get("/cache/stats", dependencies=[Depends(require_admin)])
 async def get_cache_statistics():
     """Lấy số liệu thống kê hiệu năng của Semantic Cache."""
     return {
@@ -672,19 +673,19 @@ async def get_cache_statistics():
     }
 
 
-@router.get("/perf/stats")
+@router.get("/perf/stats", dependencies=[Depends(require_admin)])
 async def get_perf_statistics():
     """Thời gian xử lý từng bước (p50/p95, ms) của các request gần nhất."""
     return {"ok": True, "stats": get_timing_stats()}
 
 
-@router.delete("/perf/clear")
+@router.delete("/perf/clear", dependencies=[Depends(require_admin)])
 async def clear_perf_statistics():
     clear_timing_stats()
     return {"ok": True}
 
 
-@router.delete("/cache/clear")
+@router.delete("/cache/clear", dependencies=[Depends(require_admin)])
 async def clear_cache_data():
     """Xóa toàn bộ dữ liệu trong Semantic Cache."""
     get_semantic_cache().clear()

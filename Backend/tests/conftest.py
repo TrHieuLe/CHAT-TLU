@@ -26,6 +26,9 @@ os.environ.setdefault("QDRANT_URL", "http://localhost:6333")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
 os.environ.setdefault("WARMUP_MODELS", "false")
 os.environ.setdefault("SEMANTIC_CACHE_DB", "")
+# Test cũ gọi thẳng endpoint quản trị; test_admin_auth.py tự bật lại kiểm tra
+os.environ.setdefault("ADMIN_AUTH_DISABLED", "true")
+os.environ.setdefault("RATE_LIMIT_PER_MINUTE", "0")
 
 
 # ─── Fixtures ──────────────────────────────────────────────────────────────────

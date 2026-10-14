@@ -13,12 +13,13 @@ from qdrant_client import AsyncQdrantClient, QdrantClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import require_admin
 from app.core.config import settings
 from app.models.database import ChatMessage, get_db, Document
 from app.rag.qdrant_client_custom import qdrant_connection_kwargs
 from app.rag.retriever import Retriever
 from app.storage.helper import StorageHelper
-from ingest import ingest_file
+from ingest import SUPPORTED, ingest_file
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/document", tags=["document"])
@@ -99,7 +100,7 @@ async def _resolve_request_name(db: AsyncSession, raw: str) -> tuple[Path | None
     return path, document, name
 
 
-@router.post("/upload", tags=["document"])
+@router.post("/upload", tags=["document"], dependencies=[Depends(require_admin)])
 async def upload_document(
         db: AsyncSession = Depends(get_db),
         *,
@@ -108,6 +109,11 @@ async def upload_document(
         auto: bool = Form(True)
 ):
     logger.info("Start uploading document")
+    suffix = Path(file.filename or "").suffix.lower()
+    if suffix not in SUPPORTED:
+        raise HTTPException(400, f"Định dạng {suffix or '(không có)'} không được hỗ trợ")
+    if file.size is not None and file.size > settings.MAX_UPLOAD_MB * 1024 * 1024:
+        raise HTTPException(413, f"File vượt quá {settings.MAX_UPLOAD_MB} MB")
     if not filename:
         filename = Path(file.filename).stem.strip()
 
@@ -155,7 +161,7 @@ async def upload_document(
     }
 
 
-@router.get("/list", tags=["document"])
+@router.get("/list", tags=["document"], dependencies=[Depends(require_admin)])
 async def list_documents(db: AsyncSession = Depends(get_db)):
     """Lấy danh sách tất cả tài liệu đã được tải lên và index."""
     res = await db.execute(
@@ -177,7 +183,7 @@ async def list_documents(db: AsyncSession = Depends(get_db)):
     ]
 
 
-@router.delete("/{doc_id}", tags=["document"])
+@router.delete("/{doc_id}", tags=["document"], dependencies=[Depends(require_admin)])
 async def delete_document(doc_id: str, db: AsyncSession = Depends(get_db)):
     """Xóa tài liệu khỏi cơ sở dữ liệu, vector store Qdrant và bộ lưu trữ file."""
     doc = await db.get(Document, doc_id)
@@ -209,7 +215,7 @@ async def delete_document(doc_id: str, db: AsyncSession = Depends(get_db)):
     return {"ok": True, "message": f"Đã xóa tài liệu {doc.original_name} thành công"}
 
 
-@router.get("/stats", tags=["document"])
+@router.get("/stats", tags=["document"], dependencies=[Depends(require_admin)])
 async def get_document_stats(db: AsyncSession = Depends(get_db)):
     """Lấy thống kê tổng quan về tài liệu và chunks."""
     from sqlalchemy import func

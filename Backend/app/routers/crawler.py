@@ -9,11 +9,12 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.auth import require_admin
 from app.models.database import Document, get_db
 from app.crawler.tlu_crawler import WEB_DOC_PREFIX, crawl_and_ingest_tlu
 
 logger = logging.getLogger(__name__)
-router = APIRouter(prefix="/api/crawler", tags=["crawler"])
+router = APIRouter(prefix="/api/crawler", tags=["crawler"], dependencies=[Depends(require_admin)])
 
 # Trạng thái phiên quét hiện tại (1 tiến trình backend chỉ chạy 1 phiên một lúc)
 _job: dict[str, Any] = {

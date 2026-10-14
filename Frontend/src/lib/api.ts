@@ -247,9 +247,51 @@ export async function streamChat(
 
 import type { DocumentItem, DocumentStats, UserMemoryItem, CrawlerStatus, CrawlJob } from "./types";
 
+// ─── Admin auth: key lưu trong sessionStorage, gửi qua header X-Admin-Key ───
+const ADMIN_KEY_STORAGE = "studybot_admin_key";
+export const ADMIN_AUTH_EVENT = "studybot-admin-auth-required";
+
+export function getAdminKey(): string {
+  try {
+    return sessionStorage.getItem(ADMIN_KEY_STORAGE) || "";
+  } catch {
+    return "";
+  }
+}
+
+export function setAdminKey(key: string) {
+  try {
+    if (key) sessionStorage.setItem(ADMIN_KEY_STORAGE, key);
+    else sessionStorage.removeItem(ADMIN_KEY_STORAGE);
+  } catch {}
+}
+
+async function adminFetch(path: string, init: RequestInit = {}): Promise<Response> {
+  const headers = new Headers(init.headers);
+  headers.set("X-Admin-Key", getAdminKey());
+  const r = await fetch(`${API_BASE}${path}`, { ...init, headers });
+  if (r.status === 401 || r.status === 403) {
+    setAdminKey("");
+    if (typeof window !== "undefined") window.dispatchEvent(new Event(ADMIN_AUTH_EVENT));
+  }
+  return r;
+}
+
+/** Kiểm tra key bằng một endpoint quản trị nhẹ; trả về thông báo lỗi hoặc null nếu hợp lệ. */
+export async function verifyAdminKey(key: string): Promise<string | null> {
+  try {
+    const r = await fetch(`${API_BASE}/api/document/stats`, { headers: { "X-Admin-Key": key } });
+    if (r.ok) return null;
+    if (r.status === 503) return "Server chưa cấu hình ADMIN_API_KEY.";
+    return "Admin key không đúng.";
+  } catch {
+    return "Không kết nối được máy chủ.";
+  }
+}
+
 export async function getDocuments(): Promise<DocumentItem[]> {
   try {
-    const r = await fetch(`${API_BASE}/api/document/list`);
+    const r = await adminFetch(`/api/document/list`);
     if (!r.ok) return [];
     return await r.json();
   } catch {
@@ -259,7 +301,7 @@ export async function getDocuments(): Promise<DocumentItem[]> {
 
 export async function getDocumentStats(): Promise<DocumentStats | null> {
   try {
-    const r = await fetch(`${API_BASE}/api/document/stats`);
+    const r = await adminFetch(`/api/document/stats`);
     if (!r.ok) return null;
     return await r.json();
   } catch {
@@ -273,7 +315,7 @@ export async function uploadDocument(file: File): Promise<{ ok: boolean; message
   form.append("auto", "true");
 
   try {
-    const r = await fetch(`${API_BASE}/api/document/upload`, {
+    const r = await adminFetch(`/api/document/upload`, {
       method: "POST",
       body: form,
     });
@@ -289,7 +331,7 @@ export async function uploadDocument(file: File): Promise<{ ok: boolean; message
 
 export async function deleteDocument(docId: string): Promise<boolean> {
   try {
-    const r = await fetch(`${API_BASE}/api/document/${docId}`, {
+    const r = await adminFetch(`/api/document/${docId}`, {
       method: "DELETE",
     });
     return r.ok;
@@ -340,7 +382,7 @@ export async function triggerCrawler(maxArticles: number = 5): Promise<{
   job?: CrawlJob;
 }> {
   try {
-    const r = await fetch(`${API_BASE}/api/crawler/run`, {
+    const r = await adminFetch(`/api/crawler/run`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ max_articles: maxArticles }),
@@ -353,7 +395,7 @@ export async function triggerCrawler(maxArticles: number = 5): Promise<{
 
 export async function getCrawlerStatus(): Promise<CrawlerStatus | null> {
   try {
-    const r = await fetch(`${API_BASE}/api/crawler/status`);
+    const r = await adminFetch(`/api/crawler/status`);
     if (!r.ok) return null;
     return await r.json();
   } catch {
