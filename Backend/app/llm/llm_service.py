@@ -7,6 +7,7 @@ Cung cấp:
   - Đếm token an toàn
 """
 
+import asyncio
 import logging
 import os
 import re
@@ -98,29 +99,54 @@ class LLMService:
                 )
             )
 
-            config = types.GenerateContentConfig(
+            config_kwargs = dict(
                 system_instruction=system_instruction,
                 temperature=temp,
                 max_output_tokens=max_tokens,
             )
+            thinking_budget = getattr(settings, "GEMINI_THINKING_BUDGET", None)
+            if thinking_budget is not None:
+                config_kwargs["thinking_config"] = types.ThinkingConfig(thinking_budget=thinking_budget)
+            config = types.GenerateContentConfig(**config_kwargs)
+            first_token_timeout = getattr(settings, "LLM_FIRST_TOKEN_TIMEOUT", None) or None
 
             for model_name in model_candidates:
+                has_chunk = False
                 try:
-                    response_stream = await client.aio.models.generate_content_stream(
-                        model=model_name,
-                        contents=contents,
-                        config=config,
-                    )
+                    async def _open_and_first():
+                        stream = await client.aio.models.generate_content_stream(
+                            model=model_name,
+                            contents=contents,
+                            config=config,
+                        )
+                        iterator = stream.__aiter__()
+                        try:
+                            first = await iterator.__anext__()
+                        except StopAsyncIteration:
+                            first = None
+                        return iterator, first
 
-                    has_chunk = False
-                    async for chunk in response_stream:
-                        text_delta = getattr(chunk, "text", "") or ""
+                    # Model quá tải thường treo lâu → cắt sớm để chuyển sang model dự phòng
+                    iterator, first = await asyncio.wait_for(_open_and_first(), timeout=first_token_timeout)
+                    if first is not None:
+                        text_delta = getattr(first, "text", "") or ""
                         if text_delta:
                             has_chunk = True
                             yield text_delta
+                        async for chunk in iterator:
+                            text_delta = getattr(chunk, "text", "") or ""
+                            if text_delta:
+                                has_chunk = True
+                                yield text_delta
                     if has_chunk:
                         return
+                except asyncio.TimeoutError:
+                    logger.warning("google-genai: %s không trả chunk đầu sau %.1fs, chuyển model dự phòng", model_name, first_token_timeout)
                 except Exception as e:
+                    if has_chunk:
+                        # Đã stream một phần cho người dùng → không chạy lại model khác (tránh lặp nội dung)
+                        logger.warning("google-genai stream bị ngắt giữa chừng với %s: %s", model_name, e)
+                        return
                     logger.warning("google-genai streaming error with %s: %s. Trying fallback model if available...", model_name, e)
 
         # Fallback sang google.generativeai

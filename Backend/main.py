@@ -1,3 +1,4 @@
+import asyncio
 from contextlib import asynccontextmanager
 import logging, os
 from fastapi import FastAPI
@@ -39,7 +40,44 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error(f"❌ Failed to initialize Qdrant: {e}")
 
+    try:
+        import torch
+        torch.set_num_threads(settings.TORCH_NUM_THREADS or os.cpu_count() or 1)
+        logger.info(f"Torch dùng {torch.get_num_threads()} CPU threads")
+    except Exception as e:
+        logger.warning(f"Không thể cấu hình torch threads: {e}")
+
+    if settings.WARMUP_MODELS:
+        # Nạp sẵn embedder + reranker để câu hỏi đầu tiên không phải chờ load model
+        from app.rag import embedder, reranker
+        for name, fn in (("embedder", embedder.warmup), ("reranker", reranker.warmup)):
+            try:
+                await asyncio.to_thread(fn)
+            except Exception as e:
+                logger.warning(f"Warmup {name} thất bại: {e}")
+
+    # Khởi tạo sẵn Gemini client: import google.genai lần đầu mất vài giây và chạy đồng bộ,
+    # nếu để tới request đầu sẽ chặn cả event loop
+    try:
+        from app.llm.llm_service import llm_service
+        await asyncio.to_thread(llm_service._get_client)
+    except Exception as e:
+        logger.warning(f"Không thể khởi tạo sẵn Gemini client: {e}")
+
+    # Mở sẵn kết nối HTTPS tới Qdrant (bắt tay TLS ~1s) để câu hỏi đầu không phải chờ
+    try:
+        await chat._async.get_collection(settings.QDRANT_COLLECTION)
+    except Exception as e:
+        logger.warning(f"Không thể mở sẵn kết nối Qdrant: {e}")
+
+    # Semantic cache: nạp từ SQLite, xóa nếu kho tài liệu đã đổi, rồi theo dõi định kỳ
+    from app.rag.semantic_cache import get_semantic_cache, watch_kb_changes
+    logger.info(f"Semantic cache: {get_semantic_cache().get_stats()['cached_entries']} entry")
+    kb_watch = asyncio.create_task(watch_kb_changes(chat._async, settings.QDRANT_COLLECTION))
+
     yield
+
+    kb_watch.cancel()
 
 
 app = FastAPI(title="NCKH StudyBot API v3.1", version="3.1.0", lifespan=lifespan)

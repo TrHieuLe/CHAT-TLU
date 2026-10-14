@@ -1,10 +1,13 @@
 import asyncio
+import functools
 import logging
+from collections import OrderedDict
 from typing import TYPE_CHECKING, Any
 
 from qdrant_client.http.models import Filter, FieldCondition, MatchValue, models
 
 from app.core.config import settings
+from app.core.timing import stage
 
 try:
     from app.rag import embedder
@@ -12,6 +15,30 @@ except ImportError:
     embedder = None
 
 logger = logging.getLogger(__name__)
+
+
+# LRU cache embedding câu hỏi: câu hỏi lặp lại (kể cả khi semantic cache bị bỏ qua do có history)
+# không phải encode lại BGE-M3 (~0.5s trên CPU)
+_EMBED_CACHE_SIZE = 256
+_embed_cache: "OrderedDict[str, tuple]" = OrderedDict()
+
+
+def _embed_cache_get(key: str):
+    hit = _embed_cache.get(key)
+    if hit is not None:
+        _embed_cache.move_to_end(key)
+    return hit
+
+
+def _embed_cache_put(key: str, value: tuple) -> None:
+    _embed_cache[key] = value
+    _embed_cache.move_to_end(key)
+    while len(_embed_cache) > _EMBED_CACHE_SIZE:
+        _embed_cache.popitem(last=False)
+
+
+def clear_embed_cache() -> None:
+    _embed_cache.clear()
 
 
 def _to_list(x: Any):
@@ -27,17 +54,35 @@ class Retriever:
         self.client = client
         self.async_client = async_client
 
-    async def retrieve_v3(self, query: str, bot_id: int = 0):
-        logger.info("Embedding query for retrieval...")
-
+    async def embed_query(self, query: str):
+        """
+        Embed câu hỏi (dense, sparse) qua LRU cache. Dùng chung cho retrieval và semantic cache
+        để mỗi câu hỏi chỉ phải encode BGE-M3 một lần.
+        """
         current_embedder = embedder
         if current_embedder is None:
             from app.rag import embedder as current_embedder
 
+        cache_key = " ".join((query or "").split()).lower()
+        cached = _embed_cache_get(cache_key)
+        if cached is not None:
+            return cached
+        loop = asyncio.get_running_loop()
+        embed_fn = functools.partial(
+            current_embedder.get_embeddings,
+            max_length=getattr(settings, "QUERY_MAX_LENGTH", 512),
+        )
+        with stage("embed"):
+            dense_, sparse_ = await loop.run_in_executor(None, embed_fn, [query])
+        if dense_ is not None and len(dense_) > 0:
+            _embed_cache_put(cache_key, (dense_, sparse_))
+        return dense_, sparse_
+
+    async def retrieve_v3(self, query: str, bot_id: int = 0):
+        logger.info("Embedding query for retrieval...")
+
         try:
-            loop = asyncio.get_running_loop()
-            result = await loop.run_in_executor(None, current_embedder.get_embeddings, [query])
-            dense_, sparse_ = result
+            dense_, sparse_ = await self.embed_query(query)
         except Exception as e:
             logger.exception("Embedding failed: %s", e)
             return []
@@ -92,14 +137,15 @@ class Retriever:
                         )
                     )
 
-                result = await self.async_client.query_points(
-                    collection_name=collection_name,
-                    prefetch=prefetch,
-                    query=models.FusionQuery(fusion=models.Fusion.RRF),
-                    with_payload=True,
-                    limit=candidates_k,
-                    query_filter=filter_obj,
-                )
+                with stage("qdrant"):
+                    result = await self.async_client.query_points(
+                        collection_name=collection_name,
+                        prefetch=prefetch,
+                        query=models.FusionQuery(fusion=models.Fusion.RRF),
+                        with_payload=True,
+                        limit=candidates_k,
+                        query_filter=filter_obj,
+                    )
                 raw_points = getattr(result, "points", []) or []
 
             else:
@@ -133,9 +179,10 @@ class Retriever:
             from app.rag.reranker import get_reranker
             reranker = get_reranker()
             loop = asyncio.get_running_loop()
-            scored_candidates = await loop.run_in_executor(
-                None, reranker.rerank, query, raw_points, top_k
-            )
+            with stage("rerank"):
+                scored_candidates = await loop.run_in_executor(
+                    None, reranker.rerank, query, raw_points, top_k
+                )
 
             final_points = []
             for point, score in scored_candidates:

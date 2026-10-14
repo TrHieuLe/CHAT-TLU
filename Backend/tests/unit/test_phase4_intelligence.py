@@ -88,12 +88,15 @@ def test_semantic_cache_vector_hit():
     vec2 = vec1 + noise
     vec2 = vec2 / np.linalg.norm(vec2)
 
-    # Truy vấn với vector gần gũi nhưng câu chữ hơi khác
-    res = cache.get("Hạn chót đóng học phí kỳ 2 là ngày nào?", query_vector=vec2)
+    # Cùng từ nội dung, khác thứ tự → semantic hit
+    res = cache.get("Học kỳ 2 thời gian nộp học phí", query_vector=vec2)
     assert res is not None
     c_ans, c_sources, match_type = res
     assert c_ans == ans1
     assert match_type == "semantic"
+
+    # Vector rất gần nhưng câu chữ khác ý → KHÔNG được trúng (BGE-M3 có thể cho sim > 0.95)
+    assert cache.get("Hạn chót đóng học phí kỳ 2 là ngày nào?", query_vector=vec2) is None
 
     # Vector trực giao (hoàn toàn không liên quan, cosine similarity ~ 0)
     vec_unrelated = np.random.randn(128).astype(np.float32)

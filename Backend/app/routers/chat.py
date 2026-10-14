@@ -9,6 +9,7 @@ FIXES:
   4. System prompt hợp nhất, không nhân đôi
   5. Nếu retrieve trúng chunk bảng (is_table=True) thì ưu tiên ép model trả bảng Markdown
 """
+import asyncio
 import json
 import logging
 import uuid
@@ -22,11 +23,13 @@ from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from qdrant_client import AsyncQdrantClient, QdrantClient
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.timing import StageTimer, get_stats as get_timing_stats, clear_stats as clear_timing_stats
 from app.models.database import AsyncSessionLocal, ChatMessage, ChatMessageFeedback, Session, get_db
+from app.rag.qdrant_client_custom import qdrant_connection_kwargs
 from app.rag.retriever import Retriever
 from app.rag.query_enhancer import enhance_query
 from app.rag.semantic_cache import get_semantic_cache
@@ -57,9 +60,9 @@ from app.routers.chat_vision import (
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
-_kw = {"url": settings.QDRANT_URL, "api_key": settings.QDRANT_API_KEY}
-_sync = QdrantClient(**_kw, prefer_grpc=False)
-_async = AsyncQdrantClient(**_kw, prefer_grpc=False)
+_kw = qdrant_connection_kwargs()
+_sync = QdrantClient(**_kw)
+_async = AsyncQdrantClient(**_kw)
 _retriever = Retriever(client=_sync, async_client=_async)
 
 try:
@@ -136,22 +139,48 @@ def _safe_chunk_text(chunk) -> str:
         return ""
 
 
+async def _generate_title(title_seed: str) -> str:
+    from app.llm.llm_service import llm_service
+    try:
+        return await llm_service.generate_title(title_seed)
+    except Exception:
+        return title_seed[:60] + ("..." if len(title_seed) > 60 else "")
+
+
+async def _save_title(db: AsyncSession, session_id: str, title: str):
+    await db.execute(
+        update(Session).where(Session.id == session_id).values(title=title)
+    )
+    await db.commit()
+
+
 async def _maybe_set_title(db: AsyncSession, session_id: str, title_seed: str):
     res = await db.execute(
-        select(ChatMessage)
+        select(func.count())
+        .select_from(ChatMessage)
         .where(ChatMessage.session_id == session_id, ChatMessage.role == "user")
     )
-    user_msgs = res.scalars().all()
-    if len(user_msgs) == 1:
-        from app.llm.llm_service import llm_service
-        try:
-            title = await llm_service.generate_title(title_seed)
-        except Exception:
-            title = title_seed[:60] + ("..." if len(title_seed) > 60 else "")
-        await db.execute(
-            update(Session).where(Session.id == session_id).values(title=title)
-        )
-        await db.commit()
+    if res.scalar_one() == 1:
+        await _save_title(db, session_id, await _generate_title(title_seed))
+
+
+# Giữ tham chiếu tới các task nền để không bị garbage-collect giữa chừng
+_background_tasks: set[asyncio.Task] = set()
+
+
+def _run_in_background(coro) -> None:
+    task = asyncio.create_task(coro)
+    _background_tasks.add(task)
+    task.add_done_callback(_background_tasks.discard)
+
+
+async def _update_memories_background(user_id: str, text: str) -> None:
+    from app.memory.memory_service import update_user_memories
+    try:
+        async with AsyncSessionLocal() as mem_db:
+            await update_user_memories(user_id, text, mem_db)
+    except Exception as e:
+        logger.warning("Cập nhật memory thất bại: %s", e)
 
 
 # ─── RAG Streaming ───────────────────────────────────────────────────────────
@@ -162,15 +191,58 @@ async def _stream_text_answer(
     question: str,
     history: list[dict],
     user_id: str = "default_user",
+    is_first_turn: bool = False,
 ) -> AsyncGenerator[str, None]:
+    timer = StageTimer("chat")
+    # Tạo tiêu đề song song với RAG/LLM thay vì chờ sau khi trả lời xong
+    title_task = asyncio.create_task(_generate_title(question)) if is_first_turn else None
+
+    generated_title = ""
+
+    async def _finish_title(db: AsyncSession, cached_title: str = ""):
+        nonlocal generated_title
+        if title_task is None:
+            return
+        if cached_title and not title_task.done():
+            # Trúng cache có sẵn tiêu đề → khỏi chờ Gemini
+            title_task.cancel()
+            title = cached_title
+        else:
+            with timer.stage("title_wait"):
+                title = await title_task
+        generated_title = title
+        await _save_title(db, session_id, title)
+
     async with AsyncSessionLocal() as db:
         try:
-            # ─── 0. Semantic Cache Check (< 30ms) ────────────────────────────────
-            # Tăng tốc phản hồi tức thì cho các câu hỏi phổ biến độc lập
-            if len(history) <= 1:
-                cached = get_semantic_cache().get(question)
+            from app.memory.memory_service import get_user_cell_state_prompt
+            user_context = await get_user_cell_state_prompt(user_id, db)
+
+            # ─── 0. Semantic Cache Check ─────────────────────────────────────────
+            # Chỉ cache câu hỏi độc lập (lượt đầu) và KHÔNG cá nhân hóa — câu trả lời có hồ sơ
+            # sinh viên (khóa, ngành...) không được dùng lại cho người khác.
+            cache_eligible = len(history) <= 1 and not user_context
+            cache = get_semantic_cache()
+            cache_vector = None
+            if cache_eligible:
+                # exact / canonical: không cần vector
+                with timer.stage("cache"):
+                    cached = cache.get_entry(question)
+                if cached is None:
+                    # semantic: dùng vector của chính câu sẽ đem đi retrieve (LRU → không encode 2 lần)
+                    try:
+                        dense_, _ = await _retriever.embed_query(enhance_query(question))
+                        if dense_ is not None and len(dense_) > 0:
+                            cache_vector = dense_[0]
+                    except Exception as e:
+                        logger.warning("Không embed được câu hỏi cho semantic cache: %s", e)
+                    if cache_vector is not None:
+                        with timer.stage("cache"):
+                            cached = cache.get_entry(question, query_vector=cache_vector)
                 if cached:
-                    cached_answer, cached_sources, match_type = cached
+                    cached_entry, match_type = cached
+                    cached_answer, cached_sources = cached_entry.answer, cached_entry.source_names
+                    timer.tags["path"] = f"cache_{match_type}"
                     db.add(ChatMessage(session_id=session_id, role="user", content=question))
                     db.add(ChatMessage(
                         session_id=session_id,
@@ -179,19 +251,23 @@ async def _stream_text_answer(
                         source_docs=_pack_meta(sources=cached_sources, kind="rag_cached"),
                     ))
                     await db.commit()
-                    await _maybe_set_title(db, session_id, question)
 
                     if cached_sources:
                         yield f"data: [SOURCES]{json.dumps(cached_sources, ensure_ascii=False)}\n\n"
 
-                    # Fast streaming animation (< 50ms)
-                    import asyncio
+                    # Hiệu ứng stream ngắn: ~10 đoạn. (sleep trên Windows tối thiểu ~15ms, nên
+                    # chia nhỏ theo từng 3 từ từng làm câu trả lời cache chậm thêm ~1.3s)
                     words = cached_answer.split(" ")
-                    for i in range(0, len(words), 3):
-                        chunk_str = " ".join(words[i:i+3]) + " "
+                    step = max(1, -(-len(words) // 10))
+                    timer.mark_since_start("ttft")
+                    for i in range(0, len(words), step):
+                        if i:
+                            await asyncio.sleep(0.01)
+                        chunk_str = " ".join(words[i:i + step]) + " "
                         yield f"data: {json.dumps(chunk_str, ensure_ascii=False)}\n\n"
-                        await asyncio.sleep(0.005)
 
+                    # Tiêu đề: dùng lại tiêu đề đã cache; nếu không có thì chờ task chạy song song
+                    await _finish_title(db, cached_title=cached_entry.title)
                     yield "data: [DONE]\n\n"
                     return
 
@@ -204,6 +280,7 @@ async def _stream_text_answer(
                 and effective_question != question
                 and extract_referenced_item(question, last_meaningful_model_answer(history)) != ""
             )
+            timer.tags["path"] = "followup" if is_self_contained_followup else "rag"
 
             if is_self_contained_followup:
                 chunks = []
@@ -303,15 +380,15 @@ async def _stream_text_answer(
                 yield f"data: [SOURCES]{json.dumps(source_names, ensure_ascii=False)}\n\n"
 
             from app.llm.llm_service import llm_service
-            from app.memory.memory_service import get_user_cell_state_prompt, update_user_memories
 
             trimmed_history = trim_history_by_token_budget(history, HISTORY_TOKEN_BUDGET)
-            user_context = await get_user_cell_state_prompt(user_id, db)
             instruction = f"{SYSTEM_INSTRUCTION}\n\n{user_context}" if user_context else SYSTEM_INSTRUCTION
 
             yield "data: [STATUS]Đang tổng hợp câu trả lời...\n\n"
 
             full = ""
+            llm_failed = False
+            llm_start = timer.elapsed_ms()
             try:
                 async for delta in llm_service.stream_chat_response(
                     history=trimmed_history,
@@ -319,6 +396,8 @@ async def _stream_text_answer(
                     system_instruction=instruction,
                 ):
                     if delta:
+                        if not full:
+                            timer.mark_since_start("ttft")
                         full += delta
                         yield f"data: {json.dumps(delta, ensure_ascii=False)}\n\n"
             except Exception as e:
@@ -331,6 +410,14 @@ async def _stream_text_answer(
                 logger.exception("Gemini stream error: %s", err)
                 yield f"data: {json.dumps(msg, ensure_ascii=False)}\n\n"
                 full = msg
+                llm_failed = True
+            if not full:
+                # Mọi model đều lỗi (vd 429) nhưng không ném exception → tránh trả câu trả lời rỗng
+                logger.error("LLM không trả về nội dung nào (tất cả model đều lỗi)")
+                full = "Hệ thống quá tải, thử lại sau."
+                yield f"data: {json.dumps(full, ensure_ascii=False)}\n\n"
+                llm_failed = True
+            timer.mark("llm", timer.elapsed_ms() - llm_start)
 
             full = postprocess_answer(full, effective_question)
 
@@ -341,23 +428,25 @@ async def _stream_text_answer(
                 source_docs=_pack_meta(sources=source_names, kind="rag"),
             ))
             await db.commit()
-            await _maybe_set_title(db, session_id, question)
+            await _finish_title(db)
 
-            # Cập nhật tế bào nhớ dài hạn (Input Gate)
-            try:
-                await update_user_memories(user_id, f"{question} {full}", db)
-            except Exception as e:
-                logger.warning("Cập nhật memory thất bại: %s", e)
+            # Cập nhật tế bào nhớ dài hạn (Input Gate) — chạy nền, không chặn [DONE]
+            _run_in_background(_update_memories_background(user_id, f"{question} {full}"))
 
-            # Lưu vào Semantic Cache nếu câu trả lời hợp lệ & câu hỏi độc lập
-            if len(history) <= 1 and full and not full.startswith("Lỗi:"):
+            # Lưu vào Semantic Cache: chỉ khi trả lời thành công VÀ có tài liệu ngữ cảnh
+            # (nếu Qdrant lỗi → không có context → không cache câu "chưa có thông tin")
+            if cache_eligible and ctx_parts and not llm_failed:
                 try:
-                    get_semantic_cache().put(question, full, source_names=source_names)
+                    cache.put(question, full, source_names=source_names, query_vector=cache_vector,
+                              title=generated_title)
                 except Exception as e:
                     logger.warning("Lưu Semantic Cache thất bại: %s", e)
 
             yield "data: [DONE]\n\n"
         finally:
+            if title_task is not None and not title_task.done():
+                title_task.cancel()
+            timer.finish()
             await db.close()
 
 
@@ -435,12 +524,15 @@ async def chat_stream(
         db.add(sess)
         await db.commit()
 
+    # Chỉ đọc N tin nhắn gần nhất — history sau đó còn bị cắt theo token budget
     res = await db.execute(
         select(ChatMessage)
         .where(ChatMessage.session_id == req.session_id)
-        .order_by(ChatMessage.created_at.asc())
+        .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
+        .limit(settings.HISTORY_MAX_MESSAGES)
     )
-    history = [{"role": m.role, "content": m.content} for m in res.scalars().all()]
+    history = [{"role": m.role, "content": m.content} for m in reversed(res.scalars().all())]
+    is_first_turn = not any(m["role"] == "user" for m in history)
 
     await db.close()
 
@@ -455,6 +547,7 @@ async def chat_stream(
             question=req.question,
             history=history,
             user_id=user_id,
+            is_first_turn=is_first_turn,
         )
 
     return StreamingResponse(
@@ -577,6 +670,18 @@ async def get_cache_statistics():
         "ok": True,
         "stats": get_semantic_cache().get_stats(),
     }
+
+
+@router.get("/perf/stats")
+async def get_perf_statistics():
+    """Thời gian xử lý từng bước (p50/p95, ms) của các request gần nhất."""
+    return {"ok": True, "stats": get_timing_stats()}
+
+
+@router.delete("/perf/clear")
+async def clear_perf_statistics():
+    clear_timing_stats()
+    return {"ok": True}
 
 
 @router.delete("/cache/clear")

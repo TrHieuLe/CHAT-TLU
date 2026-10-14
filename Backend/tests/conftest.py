@@ -24,6 +24,8 @@ os.environ.setdefault("GEMINI_API_KEY", "test-key-not-real")
 os.environ.setdefault("GOOGLE_API_KEY", "test-key-not-real")
 os.environ.setdefault("QDRANT_URL", "http://localhost:6333")
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./test.db")
+os.environ.setdefault("WARMUP_MODELS", "false")
+os.environ.setdefault("SEMANTIC_CACHE_DB", "")
 
 
 # ─── Fixtures ──────────────────────────────────────────────────────────────────
@@ -127,3 +129,12 @@ def tmp_markdown_file(tmp_path) -> Path:
         encoding="utf-8",
     )
     return file
+
+
+@pytest.fixture(autouse=True)
+def _clear_query_embed_cache():
+    """Cache embedding câu hỏi là global — xóa giữa các test để mock không bị rò rỉ."""
+    from app.rag.retriever import clear_embed_cache
+    clear_embed_cache()
+    yield
+    clear_embed_cache()

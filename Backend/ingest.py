@@ -26,6 +26,7 @@ from app.core.config import settings
 from app.rag.doc_preprocessor import run as preprocess_doc
 from app.rag.embedder import get_embeddings
 from app.rag.qdrant_client_custom import qdrant_client
+from app.rag.semantic_cache import invalidate_semantic_cache
 from app.rag.table_extractor import extract_all_tables
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -104,6 +105,7 @@ def delete_doc_by_name(doc_name: str) -> bool:
             wait=True,
         )
         log.info("  🗑 Đã xóa dữ liệu cũ của file: %s", doc_name)
+        invalidate_semantic_cache(f"xóa tài liệu {doc_name}")
         return True
     except Exception as e:
         log.error("  Không xóa được dữ liệu cũ của %s: %s", doc_name, e)
@@ -272,6 +274,8 @@ def ingest_file(file_path: Path, doc_id: str | None = None, force: bool = False,
     log.info("\n  ✅ %s: %s chunks vào Qdrant", file_path.name, total)
     log.info("     (%s text + %s bảng)", len(text_chunks), len(table_items))
     log.info("     file_hash=%s", file_hash[:16] + "...")
+    if total:
+        invalidate_semantic_cache(f"ingest tài liệu {file_path.name}")
     return total
 
 
@@ -297,6 +301,7 @@ def clear_collection() -> None:
     try:
         qdrant_client.recreate_collection(vector_size=settings.EMBEDDING_VECTOR_SIZE)
         log.info("✓ Đã xóa và tạo lại collection hybrid")
+        invalidate_semantic_cache("tạo lại collection")
     except Exception as e:
         log.error("Lỗi: %s", e)
 
