@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models.database import ChatMessage, get_db, Document
+from app.rag.qdrant_client_custom import qdrant_connection_kwargs
 from app.rag.retriever import Retriever
 from app.storage.helper import StorageHelper
 from ingest import ingest_file
@@ -21,9 +22,9 @@ from ingest import ingest_file
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/document", tags=["document"])
 
-_kw = {"url": settings.QDRANT_URL, "api_key": settings.QDRANT_API_KEY}
-_sync = QdrantClient(**_kw, prefer_grpc=False)
-_async = AsyncQdrantClient(**_kw, prefer_grpc=False)
+_kw = qdrant_connection_kwargs()
+_sync = QdrantClient(**_kw)
+_async = AsyncQdrantClient(**_kw)
 _retriever = Retriever(client=_sync, async_client=_async)
 
 try:

@@ -62,10 +62,12 @@ def warmup() -> None:
     cho request đầu tiên.
     """
     model = _get_model()
-    # Chạy thử một lần để khởi tạo kernel/tokenizer, tránh request đầu bị chậm
+    # Chạy thử với câu dài cỡ câu hỏi thật để khởi tạo kernel/tokenizer, tránh request đầu bị chậm
     try:
-        model.encode(["khởi động"], max_length=32, return_dense=True,
-                     return_sparse=True, return_colbert_vecs=False)
+        sample = "Điều kiện để sinh viên được xét công nhận tốt nghiệp đại học là gì?"
+        for _ in range(2):
+            model.encode([sample], max_length=512, return_dense=True,
+                         return_sparse=True, return_colbert_vecs=False)
     except Exception as e:
         logger.warning("Warmup encode failed: %s", e)
     logger.info("🔥 Embedding model warmed up and ready.")

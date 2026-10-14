@@ -23,6 +23,12 @@ class TestSigmoid:
 
 
 class TestReranker:
+    @pytest.fixture(autouse=True)
+    def _enable_reranker(self):
+        # Mặc định ENABLE_RERANKER=False; các test này kiểm tra logic khi reranker bật
+        with patch("app.rag.reranker.settings.ENABLE_RERANKER", True):
+            yield
+
     def test_empty_chunks(self):
         reranker = Reranker()
         assert reranker.rerank("query", []) == []

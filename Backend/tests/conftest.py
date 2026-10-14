@@ -128,3 +128,12 @@ def tmp_markdown_file(tmp_path) -> Path:
         encoding="utf-8",
     )
     return file
+
+
+@pytest.fixture(autouse=True)
+def _clear_query_embed_cache():
+    """Cache embedding câu hỏi là global — xóa giữa các test để mock không bị rò rỉ."""
+    from app.rag.retriever import clear_embed_cache
+    clear_embed_cache()
+    yield
+    clear_embed_cache()

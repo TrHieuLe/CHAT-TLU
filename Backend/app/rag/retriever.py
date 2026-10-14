@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+from collections import OrderedDict
 from typing import TYPE_CHECKING, Any
 
 from qdrant_client.http.models import Filter, FieldCondition, MatchValue, models
@@ -14,6 +15,30 @@ except ImportError:
     embedder = None
 
 logger = logging.getLogger(__name__)
+
+
+# LRU cache embedding câu hỏi: câu hỏi lặp lại (kể cả khi semantic cache bị bỏ qua do có history)
+# không phải encode lại BGE-M3 (~0.5s trên CPU)
+_EMBED_CACHE_SIZE = 256
+_embed_cache: "OrderedDict[str, tuple]" = OrderedDict()
+
+
+def _embed_cache_get(key: str):
+    hit = _embed_cache.get(key)
+    if hit is not None:
+        _embed_cache.move_to_end(key)
+    return hit
+
+
+def _embed_cache_put(key: str, value: tuple) -> None:
+    _embed_cache[key] = value
+    _embed_cache.move_to_end(key)
+    while len(_embed_cache) > _EMBED_CACHE_SIZE:
+        _embed_cache.popitem(last=False)
+
+
+def clear_embed_cache() -> None:
+    _embed_cache.clear()
 
 
 def _to_list(x: Any):
@@ -36,15 +61,22 @@ class Retriever:
         if current_embedder is None:
             from app.rag import embedder as current_embedder
 
+        cache_key = " ".join((query or "").split()).lower()
         try:
-            loop = asyncio.get_running_loop()
-            embed_fn = functools.partial(
-                current_embedder.get_embeddings,
-                max_length=getattr(settings, "QUERY_MAX_LENGTH", 512),
-            )
-            with stage("embed"):
-                result = await loop.run_in_executor(None, embed_fn, [query])
-            dense_, sparse_ = result
+            cached = _embed_cache_get(cache_key)
+            if cached is not None:
+                dense_, sparse_ = cached
+            else:
+                loop = asyncio.get_running_loop()
+                embed_fn = functools.partial(
+                    current_embedder.get_embeddings,
+                    max_length=getattr(settings, "QUERY_MAX_LENGTH", 512),
+                )
+                with stage("embed"):
+                    result = await loop.run_in_executor(None, embed_fn, [query])
+                dense_, sparse_ = result
+                if dense_ is not None and len(dense_) > 0:
+                    _embed_cache_put(cache_key, (dense_, sparse_))
         except Exception as e:
             logger.exception("Embedding failed: %s", e)
             return []

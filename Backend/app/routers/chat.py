@@ -29,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.timing import StageTimer, get_stats as get_timing_stats, clear_stats as clear_timing_stats
 from app.models.database import AsyncSessionLocal, ChatMessage, ChatMessageFeedback, Session, get_db
+from app.rag.qdrant_client_custom import qdrant_connection_kwargs
 from app.rag.retriever import Retriever
 from app.rag.query_enhancer import enhance_query
 from app.rag.semantic_cache import get_semantic_cache
@@ -59,9 +60,9 @@ from app.routers.chat_vision import (
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/chat", tags=["chat"])
 
-_kw = {"url": settings.QDRANT_URL, "api_key": settings.QDRANT_API_KEY}
-_sync = QdrantClient(**_kw, prefer_grpc=False)
-_async = AsyncQdrantClient(**_kw, prefer_grpc=False)
+_kw = qdrant_connection_kwargs()
+_sync = QdrantClient(**_kw)
+_async = AsyncQdrantClient(**_kw)
 _retriever = Retriever(client=_sync, async_client=_async)
 
 try:

@@ -1,3 +1,4 @@
+import httpx
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
 from app.core.config import settings
@@ -6,14 +7,24 @@ import logging
 log = logging.getLogger(__name__)
 
 
+def qdrant_connection_kwargs() -> dict:
+    """
+    Tham số kết nối dùng chung cho mọi Qdrant client.
+    httpx mặc định đóng kết nối nhàn rỗi sau 5s → mỗi câu hỏi phải bắt tay TLS lại
+    (~650ms với Qdrant Cloud ở xa). Giữ kết nối lâu hơn để tái sử dụng.
+    """
+    return {
+        "url": settings.QDRANT_URL,
+        "api_key": settings.QDRANT_API_KEY,
+        "prefer_grpc": False,
+        "limits": httpx.Limits(keepalive_expiry=settings.QDRANT_KEEPALIVE_SECONDS),
+    }
+
+
 class QdrantClientCustom:
     def __init__(self):
         self.collection_name = settings.QDRANT_COLLECTION
-        self.client = QdrantClient(
-            url=settings.QDRANT_URL,
-            api_key=settings.QDRANT_API_KEY,
-            prefer_grpc=False,
-        )
+        self.client = QdrantClient(**qdrant_connection_kwargs())
 
     def _ensure_payload_indexes(self) -> None:
         for field in ["doc_name", "doc_id"]:

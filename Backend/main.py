@@ -56,6 +56,12 @@ async def lifespan(app: FastAPI):
             except Exception as e:
                 logger.warning(f"Warmup {name} thất bại: {e}")
 
+    # Mở sẵn kết nối HTTPS tới Qdrant (bắt tay TLS ~1s) để câu hỏi đầu không phải chờ
+    try:
+        await chat._async.get_collection(settings.QDRANT_COLLECTION)
+    except Exception as e:
+        logger.warning(f"Không thể mở sẵn kết nối Qdrant: {e}")
+
     yield
 
 

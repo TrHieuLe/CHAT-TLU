@@ -70,7 +70,8 @@ def pct(values: list[float], p: float) -> float:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--base", default="http://localhost:8000")
+    # Dùng 127.0.0.1: trên Windows "localhost" thử IPv6 trước → mỗi kết nối chậm thêm ~2s
+    ap.add_argument("--base", default="http://127.0.0.1:8000")
     ap.add_argument("--repeat", type=int, default=1)
     ap.add_argument("--clear-cache", action="store_true", help="Xóa semantic cache + perf stats trước khi chạy")
     ap.add_argument("--out", help="Ghi kết quả ra file JSON")

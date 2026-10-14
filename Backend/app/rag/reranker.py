@@ -32,6 +32,18 @@ def _sigmoid(x: float) -> float:
         return 0.5
 
 
+def _quantize_int8(model):
+    """Dynamic int8 quantization cho các lớp Linear — chỉ dùng trên CPU."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            return model
+        return torch.ao.quantization.quantize_dynamic(model, {torch.nn.Linear}, dtype=torch.qint8)
+    except Exception as e:
+        logger.warning("Không thể quantize reranker sang int8: %s", e)
+        return model
+
+
 class Reranker:
     def __init__(self, model_name: Optional[str] = None):
         self.model_name = model_name or settings.RERANKER_MODEL
@@ -46,7 +58,9 @@ class Reranker:
         try:
             from FlagEmbedding import FlagReranker
             self._model = FlagReranker(self.model_name, use_fp16=False)
-            logger.info("✅ FlagReranker đã tải thành công: %s", self.model_name)
+            if settings.RERANKER_QUANTIZE_INT8:
+                self._model.model = _quantize_int8(self._model.model)
+            logger.info("✅ FlagReranker đã tải thành công: %s (int8=%s)", self.model_name, settings.RERANKER_QUANTIZE_INT8)
             return self._model
         except Exception as e1:
             logger.warning("Không thể tải FlagReranker (%s), thử CrossEncoder: %s", self.model_name, e1)

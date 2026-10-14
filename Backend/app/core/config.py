@@ -43,7 +43,10 @@ class Settings(BaseSettings):
     MAX_OUTPUT_TOKENS: int = 4096
 
     # Reranking & Retrieval Optimization
-    ENABLE_RERANKER: bool = True
+    # Tắt mặc định: trên bộ test TLU, hybrid RRF không rerank cho HitRate/MRR bằng hoặc cao hơn
+    # (246 câu: 68.2%/0.606 vs 67.8%/0.555) trong khi reranker tốn 7-9s/câu trên CPU.
+    # Nếu bật lại, nên dùng RERANKER_QUANTIZE_INT8=true + RERANKER_MAX_LENGTH=256 (~3.6s).
+    ENABLE_RERANKER: bool = False
     RERANKER_MODEL: str = "BAAI/bge-reranker-base"
     RETRIEVE_CANDIDATES_K: int = 8
     TOP_K: int = 4
@@ -57,6 +60,8 @@ class Settings(BaseSettings):
     HISTORY_MAX_MESSAGES: int = 30          # số tin nhắn gần nhất đọc từ DB mỗi lượt
     RERANKER_BATCH_SIZE: int = 1            # batch nhỏ = ít padding; trên CPU nhanh hơn nhiều
     RERANKER_MAX_LENGTH: int = 512
+    RERANKER_QUANTIZE_INT8: bool = False    # int8 dynamic quantization trên CPU
+    QDRANT_KEEPALIVE_SECONDS: float = 600.0  # giữ kết nối HTTP tới Qdrant (mặc định httpx chỉ 5s)
     TORCH_NUM_THREADS: int | None = None    # None = dùng toàn bộ CPU core (torch mặc định chỉ dùng một nửa)
 
 
