@@ -68,6 +68,10 @@ class Settings(BaseSettings):
     SEMANTIC_CACHE_TTL_SECONDS: float = 7 * 24 * 3600
     SEMANTIC_CACHE_DB: str = "./semantic_cache.db"   # rỗng = chỉ lưu RAM
     TORCH_NUM_THREADS: int | None = None    # None = dùng toàn bộ CPU core (torch mặc định chỉ dùng một nửa)
+    # Crawler thông báo web trường (WordPress REST API)
+    TLU_CRAWL_BASE_URL: str = "https://tlu.edu.vn"
+    TLU_CRAWL_CATEGORY_IDS: list[int] = [2010]   # category "Thông báo"
+    TLU_CRAWL_TIMEOUT_SECONDS: float = 20.0
 
 
 settings = Settings()

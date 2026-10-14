@@ -24,8 +24,11 @@ import { getDocumentTextPreview, DocumentTextPreview } from "@/lib/api";
 interface DocPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
+  /** Tên hiển thị */
   title: string;
   docUrl: string;
+  /** Tên file dùng để tra cứu và nhận diện định dạng (mặc định = title) */
+  fileName?: string;
 }
 
 export default function DocPreviewModal({
@@ -33,6 +36,7 @@ export default function DocPreviewModal({
   onClose,
   title,
   docUrl,
+  fileName,
 }: DocPreviewModalProps) {
   const [loading, setLoading] = useState(true);
   const [previewData, setPreviewData] = useState<DocumentTextPreview | null>(null);
@@ -41,8 +45,12 @@ export default function DocPreviewModal({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const lookupName = fileName || title;
+  const displayTitle = previewData?.display_name || title;
+  const extractError = previewData && !previewData.ok ? previewData.content : null;
+
   // Nhận diện loại file
-  const lowerTitle = (title || "").toLowerCase();
+  const lowerTitle = (lookupName || "").toLowerCase();
   const isPdf = lowerTitle.endsWith(".pdf");
   const isDocx = lowerTitle.endsWith(".docx") || lowerTitle.endsWith(".doc");
   const isExcel =
@@ -67,23 +75,30 @@ export default function DocPreviewModal({
     setLoadError(false);
     setSearchQuery("");
 
-    // Đối với DOCX, Excel, TXT, MD hoặc file không phải PDF: Tải nội dung text trích xuất từ server
-    if (isDocx || isExcel || isText || !isPdf) {
-      getDocumentTextPreview(title)
+    // File không phải PDF: tải nội dung text trích xuất từ server
+    if (!isPdf) {
+      let cancelled = false;
+      getDocumentTextPreview(lookupName)
         .then((data) => {
-          if (data && data.ok) {
-            setPreviewData(data);
-          } else {
-            setPreviewData(null);
-          }
+          if (!cancelled) setPreviewData(data);
         })
-        .catch(() => setLoadError(true))
-        .finally(() => setLoading(false));
-    } else {
-      // Đối với PDF: Loading được quản lý qua sự kiện onLoad của iframe
-      setLoading(true);
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
     }
-  }, [isOpen, title, isPdf, isDocx, isExcel, isText]);
+    // PDF: loading được quản lý qua sự kiện onLoad của iframe
+  }, [isOpen, lookupName, isPdf]);
+
+  // Đếm kết quả tìm kiếm (hook phải gọi trước mọi lệnh return sớm)
+  const matchCount = useMemo(() => {
+    if (!searchQuery.trim() || !previewData?.content) return 0;
+    const escaped = searchQuery.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const matches = previewData.content.match(new RegExp(escaped, "gi"));
+    return matches ? matches.length : 0;
+  }, [searchQuery, previewData?.content]);
 
   if (!isOpen) return null;
 
@@ -113,18 +128,6 @@ export default function DocPreviewModal({
     if (isText) return "Tệp văn bản (.txt / .md)";
     return "Tài liệu tham khảo";
   };
-
-  // Đếm kết quả tìm kiếm
-  const matchCount = useMemo(() => {
-    if (!searchQuery.trim() || !previewData?.content) return 0;
-    try {
-      const regex = new RegExp(searchQuery.trim(), "gi");
-      const matches = previewData.content.match(regex);
-      return matches ? matches.length : 0;
-    } catch {
-      return 0;
-    }
-  }, [searchQuery, previewData?.content]);
 
   const renderHighlightedNode = (node: React.ReactNode): React.ReactNode => {
     if (!searchQuery.trim() || typeof node !== "string") return node;
@@ -184,8 +187,8 @@ export default function DocPreviewModal({
               {renderFileIcon()}
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm sm:text-base font-semibold text-slate-800 truncate" title={title}>
-                {title}
+              <h3 className="text-sm sm:text-base font-semibold text-slate-800 truncate" title={displayTitle}>
+                {displayTitle}
               </h3>
               <div className="flex items-center gap-2 text-xs text-slate-500">
                 <span className="inline-flex items-center gap-1 font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
@@ -197,7 +200,7 @@ export default function DocPreviewModal({
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
-            {previewData?.content && (
+            {previewData?.ok && previewData.content && (
               <button
                 onClick={handleCopyText}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200 bg-white"
@@ -257,7 +260,7 @@ export default function DocPreviewModal({
         </div>
 
         {/* Search Bar for Text/Docx */}
-        {!isPdf && previewData?.content && (
+        {!isPdf && previewData?.ok && previewData.content && (
           <div className="flex items-center justify-between px-4 sm:px-6 py-2 bg-slate-100/80 border-b border-slate-200 text-xs">
             <div className="flex items-center gap-2 flex-1 max-w-sm">
               <Search className="w-3.5 h-3.5 text-slate-400" />
@@ -307,12 +310,12 @@ export default function DocPreviewModal({
                   <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
                   <p className="text-sm font-medium text-slate-600">Đang chuẩn bị nội dung tài liệu...</p>
                 </div>
-              ) : previewData?.content ? (
+              ) : previewData?.ok && previewData.content ? (
                 <div className="max-w-4xl mx-auto bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-slate-200">
                   <div className="mb-6 pb-4 border-b border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
                       <BookOpen className="w-4 h-4 text-blue-600" />
-                      <span>Nội dung văn bản quy chế</span>
+                      <span>Nội dung tài liệu</span>
                     </div>
                     {previewData.file_size > 0 && (
                       <span className="text-xs text-slate-400">
@@ -405,9 +408,13 @@ export default function DocPreviewModal({
                     {renderFileIcon()}
                   </div>
                   <div className="max-w-md">
-                    <h4 className="text-base font-semibold text-slate-800 mb-1">{title}</h4>
+                    <h4 className="text-base font-semibold text-slate-800 mb-1">{displayTitle}</h4>
                     <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                      Tài liệu này được lưu trữ dưới định dạng {getFormatBadge()}. Bạn có thể tải về trực tiếp để mở bằng ứng dụng trên máy tính.
+                      {extractError
+                        ? extractError
+                        : previewData
+                        ? `Tài liệu này được lưu trữ dưới định dạng ${getFormatBadge()} và không có nội dung văn bản để xem nhanh. Bạn có thể tải về để mở bằng ứng dụng trên máy tính.`
+                        : "Không tìm thấy tài liệu trên hệ thống hoặc không thể kết nối máy chủ. Bạn có thể thử mở trong tab mới hoặc tải về."}
                     </p>
                     <a
                       href={docUrl}

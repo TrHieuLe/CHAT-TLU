@@ -32,8 +32,8 @@ class StorageHelper:
     def upload_v2(self, path: Path | str, file: UploadFile) -> Path | None:
         return self.storage.upload_v2(path=path, file=file)
 
-    def find_file(self, path: Path | str) -> Path | None:
-        return self.storage.find_file(path=path)
+    def find_file(self, path: Path | str, fuzzy: bool = True) -> Path | None:
+        return self.storage.find_file(path=path, fuzzy=fuzzy)
 
     def download_v2(self, path: Path | str):
         return self.storage.download_v2(path=path)

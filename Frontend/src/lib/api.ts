@@ -45,6 +45,7 @@ export function buildDocumentReferenceUrl(sourceName: string) {
 export interface DocumentTextPreview {
   ok: boolean;
   filename: string;
+  display_name?: string;
   file_type: string;
   file_size: number;
   content: string;
@@ -244,7 +245,7 @@ export async function streamChat(
   onDone();
 }
 
-import type { DocumentItem, DocumentStats, UserMemoryItem, CrawlerStatus } from "./types";
+import type { DocumentItem, DocumentStats, UserMemoryItem, CrawlerStatus, CrawlJob } from "./types";
 
 export async function getDocuments(): Promise<DocumentItem[]> {
   try {
@@ -336,8 +337,7 @@ export async function clearAllUserMemories(): Promise<boolean> {
 export async function triggerCrawler(maxArticles: number = 5): Promise<{
   ok: boolean;
   message?: string;
-  crawled_count?: number;
-  articles?: any[];
+  job?: CrawlJob;
 }> {
   try {
     const r = await fetch(`${API_BASE}/api/crawler/run`, {

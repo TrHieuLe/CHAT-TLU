@@ -1,5 +1,6 @@
 import logging
 import mimetypes
+import unicodedata
 import urllib.parse
 import uuid
 from pathlib import Path
@@ -33,12 +34,69 @@ try:
 except Exception as e:
     logger.warning("Chưa cấu hình API Key Gemini hợp lệ khi khởi động: %s", e)
 
-BASE_DIR = Path(__file__).resolve().parents[1]
-UPLOAD_DIR = BASE_DIR / "data" / "images" / "uploads"
+APP_DIR = Path(__file__).resolve().parents[1]          # Backend/app
+UPLOAD_DIR = APP_DIR / "data" / "images" / "uploads"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
-UPLOAD_DOC_DIR = BASE_DIR / "data"
+DATA_DIR = Path(__file__).resolve().parents[2] / "data"  # Backend/data
 
 storage_helper = StorageHelper()
+
+
+def _nfc(text: str) -> str:
+    return unicodedata.normalize("NFC", text or "").strip()
+
+
+def _document_file_names(doc: Document) -> list[str]:
+    """Các tên file vật lý có thể ứng với 1 Document (upload lưu original_name có đuôi, crawler thì không)."""
+    names = [doc.original_name]
+    if doc.filename and doc.file_type:
+        names.append(f"{doc.filename}.{doc.file_type}")
+    return [n for n in dict.fromkeys(names) if n]
+
+
+async def resolve_document(
+        db: AsyncSession, name: str, fuzzy: bool = True
+) -> tuple[Path | None, Document | None]:
+    """
+    Tra cứu tài liệu theo tên mà frontend gửi lên (original_name, filename hoặc doc_name trong Qdrant):
+    1. Tìm dòng Document khớp tên → thử các tên file vật lý của nó.
+    2. Fallback: quét trực tiếp trên ổ đĩa.
+    """
+    name = _nfc(name)
+    if not name:
+        return None, None
+
+    res = await db.execute(
+        select(Document)
+        .where(
+            (Document.filename == name)
+            | (Document.original_name == name)
+            | (Document.filename == Path(name).stem)
+        )
+        .order_by(Document.created_at.desc())
+        .limit(1)
+    )
+    document = res.scalars().first()
+
+    if document:
+        for candidate in _document_file_names(document):
+            path = storage_helper.find_file(candidate, fuzzy=False)
+            if path:
+                return path, document
+
+    return storage_helper.find_file(name, fuzzy=fuzzy), document
+
+
+async def _resolve_request_name(db: AsyncSession, raw: str) -> tuple[Path | None, Document | None, str]:
+    """Starlette đã decode path một lần; chỉ thử unquote thêm nếu tên gốc không tìm thấy."""
+    name = _nfc(raw)
+    path, document = await resolve_document(db, name)
+    if not path:
+        unquoted = _nfc(urllib.parse.unquote(raw))
+        if unquoted != name:
+            path, document = await resolve_document(db, unquoted)
+            name = unquoted
+    return path, document, name
 
 
 @router.post("/upload", tags=["document"])
@@ -126,18 +184,22 @@ async def delete_document(doc_id: str, db: AsyncSession = Depends(get_db)):
     if not doc:
         raise HTTPException(status_code=404, detail="Không tìm thấy tài liệu")
 
-    # Xóa khỏi Qdrant theo doc_name
+    # Xóa khỏi Qdrant theo doc_name (doc_name = tên file có đuôi lúc ingest)
     from ingest import delete_doc_by_name
-    try:
-        delete_doc_by_name(doc.original_name)
-        if doc.filename != doc.original_name:
-            delete_doc_by_name(doc.filename)
-    except Exception as e:
-        logger.warning("Không thể xóa vector Qdrant cho %s: %s", doc.original_name, e)
+    doc_names = dict.fromkeys([*_document_file_names(doc), doc.filename])
+    for doc_name in doc_names:
+        if not doc_name:
+            continue
+        try:
+            delete_doc_by_name(doc_name)
+        except Exception as e:
+            logger.warning("Không thể xóa vector Qdrant cho %s: %s", doc_name, e)
 
-    # Xóa file vật lý khỏi storage
+    # Xóa file vật lý khỏi storage (chỉ khớp chính xác)
     try:
-        storage_helper.delete_v2(doc.original_name)
+        for candidate in _document_file_names(doc):
+            if storage_helper.delete_v2(candidate):
+                break
     except Exception as e:
         logger.warning("Không thể xóa file vật lý %s: %s", doc.original_name, e)
 
@@ -177,32 +239,9 @@ async def get_reference(db: AsyncSession = Depends(get_db), *, filename: str):
     if not filename:
         raise HTTPException(400, "Tên nguồn tham khảo không được để trống")
 
-    decoded_filename = urllib.parse.unquote(filename).strip()
-    target_path: Path | None = None
-    original_display_name: str = decoded_filename
-
-    # 1. Tra cứu trong SQLite DB trước
-    res = await db.execute(
-        select(Document)
-        .where(
-            (Document.filename == decoded_filename)
-            | (Document.original_name == decoded_filename)
-            | (Document.filename == Path(decoded_filename).stem)
-        )
-        .order_by(Document.created_at.desc())
-        .limit(1)
-    )
-    document = res.scalars().first()
-
-    if document and document.original_name:
-        original_display_name = document.original_name
-        target_path = storage_helper.find_file(document.original_name)
-
-    # 2. Nếu DB chưa có hoặc file không ở vị trí cũ, tìm trực tiếp trên ổ đĩa
-    if not target_path or not target_path.is_file():
-        target_path = storage_helper.find_file(decoded_filename)
-        if target_path and target_path.is_file():
-            original_display_name = target_path.name
+    target_path, _document, decoded_filename = await _resolve_request_name(db, filename)
+    # Tên tải về luôn giữ đúng đuôi file thật
+    original_display_name = target_path.name if target_path else decoded_filename
 
     if not target_path or not target_path.is_file():
         logger.warning("Không tìm thấy file nguồn tham khảo: %s", decoded_filename)
@@ -226,7 +265,6 @@ async def get_reference(db: AsyncSession = Depends(get_db), *, filename: str):
         encoded_name = urllib.parse.quote(original_display_name)
         headers = {
             "Content-Disposition": f"inline; filename*=UTF-8''{encoded_name}",
-            "Access-Control-Allow-Origin": "*",
         }
 
         return FileResponse(
@@ -241,20 +279,20 @@ async def get_reference(db: AsyncSession = Depends(get_db), *, filename: str):
 
 
 @router.get("/preview-text/{filename:path}")
-async def get_preview_text(*, filename: str):
+async def get_preview_text(db: AsyncSession = Depends(get_db), *, filename: str):
     """
     Trích xuất và trả về nội dung text của tài liệu để xem nhanh trên giao diện modal.
-    Hỗ trợ .txt, .md, .docx, .pdf.
+    Hỗ trợ .txt, .md, .docx, .pdf, .xlsx/.csv.
     """
     if not filename:
         raise HTTPException(400, "Tên tài liệu không được để trống")
 
-    decoded_filename = urllib.parse.unquote(filename).strip()
-    target_path = storage_helper.find_file(decoded_filename)
+    target_path, document, decoded_filename = await _resolve_request_name(db, filename)
 
     if not target_path or not target_path.is_file():
         raise HTTPException(404, f"Không tìm thấy tài liệu '{decoded_filename}'")
 
+    display_name = document.original_name if document and document.original_name else target_path.name
     ext = target_path.suffix.lower()
     file_size = target_path.stat().st_size
     text_content = ""
@@ -271,8 +309,9 @@ async def get_preview_text(*, filename: str):
                 from app.rag.table_extractor import extract_tables_from_excel
                 excel_tables = extract_tables_from_excel(target_path)
                 if excel_tables:
+                    # table_text đã có sẵn tiêu đề "### Bảng: <sheet>"
                     text_content = "\n\n".join(
-                        f"### {t.get('sheet_name', 'Bảng tính')}\n{t.get('table_text', '')}"
+                        t.get("table_text", "")
                         for t in excel_tables
                         if t.get("table_text")
                     )
@@ -333,6 +372,7 @@ async def get_preview_text(*, filename: str):
         return {
             "ok": True,
             "filename": target_path.name,
+            "display_name": display_name,
             "file_type": ext.replace(".", ""),
             "file_size": file_size,
             "content": text_content.strip(),
@@ -343,6 +383,7 @@ async def get_preview_text(*, filename: str):
         return {
             "ok": False,
             "filename": target_path.name,
+            "display_name": display_name,
             "file_type": ext.replace(".", ""),
             "file_size": file_size,
             "content": f"Không thể trích xuất nội dung văn bản tự động: {e}",
@@ -353,7 +394,7 @@ async def sync_local_data_documents(db: AsyncSession) -> int:
     """
     Quét đệ quy thư mục Backend/data/ và tự động thêm các tài liệu chưa có vào bảng Document.
     """
-    data_dir = BASE_DIR / "data"
+    data_dir = DATA_DIR
     if not data_dir.exists():
         return 0
 
@@ -365,8 +406,9 @@ async def sync_local_data_documents(db: AsyncSession) -> int:
             continue
         if file_path.suffix.lower() not in supported_exts:
             continue
-        # Bỏ qua thư mục images/uploads
-        if "uploads" in file_path.parts or "images" in file_path.parts:
+        # Bỏ qua ảnh upload và bài cào web (crawler tự quản lý dòng Document)
+        rel_parts = file_path.relative_to(data_dir).parts
+        if {"uploads", "images", "crawled"} & set(rel_parts):
             continue
 
         filename_stem = file_path.stem.strip()

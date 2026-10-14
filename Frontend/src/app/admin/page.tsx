@@ -32,7 +32,7 @@ import {
   triggerCrawler,
   getCrawlerStatus,
 } from "@/lib/api";
-import { DocumentItem, DocumentStats, CrawlerStatus } from "@/lib/types";
+import { DocumentItem, DocumentStats, CrawlerStatus, CrawlJob } from "@/lib/types";
 import DocPreviewModal from "@/components/chat/DocPreviewModal";
 
 export default function AdminPage() {
@@ -45,7 +45,7 @@ export default function AdminPage() {
   const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
 
   // Modal preview tài liệu
-  const [previewDoc, setPreviewDoc] = useState<{ isOpen: boolean; title: string; url: string }>({
+  const [previewDoc, setPreviewDoc] = useState<{ isOpen: boolean; title: string; url: string; fileName?: string }>({
     isOpen: false,
     title: "",
     url: "",
@@ -60,6 +60,8 @@ export default function AdminPage() {
   const [isCrawling, setIsCrawling] = useState<boolean>(false);
   const [crawlLimit, setCrawlLimit] = useState<number>(5);
   const [crawlFeedback, setCrawlFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const crawlPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const crawlJob = crawlerStatus?.job;
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
@@ -84,35 +86,67 @@ export default function AdminPage() {
     }
   };
 
-  const handleRunCrawler = async () => {
-    setIsCrawling(true);
-    setCrawlFeedback(null);
-    try {
-      const res = await triggerCrawler(crawlLimit);
-      if (res.ok) {
-        setCrawlFeedback({
-          type: "success",
-          message: `Thu thập thành công! ${res.crawled_count} bài viết mới từ TLU đã được ingest vào hệ thống RAG.`,
-        });
-        await loadData();
-      } else {
-        setCrawlFeedback({
-          type: "error",
-          message: res.message || "Có lỗi xảy ra trong quá trình quét thông báo TLU.",
-        });
-      }
-    } catch (err: any) {
+  const stopCrawlPolling = () => {
+    if (crawlPollRef.current) {
+      clearInterval(crawlPollRef.current);
+      crawlPollRef.current = null;
+    }
+  };
+
+  const finishCrawl = async (job: CrawlJob) => {
+    stopCrawlPolling();
+    setIsCrawling(false);
+    const summary = `Mới ${job.new} · Cập nhật ${job.updated} · Bỏ qua ${job.skipped} · Lỗi ${job.failed}`;
+    if (job.total === 0 && job.errors.length > 0) {
+      setCrawlFeedback({ type: "error", message: job.errors[0] });
+    } else if (job.failed > 0) {
       setCrawlFeedback({
         type: "error",
-        message: err?.message || "Không thể kết nối đến máy chủ Crawler.",
+        message: `Hoàn tất với lỗi (${summary}). ${job.errors.slice(0, 2).join("; ")}`,
       });
-    } finally {
-      setIsCrawling(false);
+    } else {
+      setCrawlFeedback({ type: "success", message: `Quét xong ${job.total} thông báo: ${summary}.` });
+    }
+    await loadData();
+  };
+
+  const startCrawlPolling = () => {
+    stopCrawlPolling();
+    setIsCrawling(true);
+    crawlPollRef.current = setInterval(async () => {
+      const st = await getCrawlerStatus();
+      if (!st?.job) return;
+      setCrawlerStatus(st);
+      if (!st.job.running) {
+        await finishCrawl(st.job);
+      }
+    }, 2000);
+  };
+
+  const handleRunCrawler = async () => {
+    setCrawlFeedback(null);
+    const res = await triggerCrawler(crawlLimit);
+    if (res.job) {
+      setCrawlerStatus((prev) => (prev ? { ...prev, job: res.job } : prev));
+    }
+    if (res.ok || res.job?.running) {
+      // Đã bắt đầu (hoặc đang có phiên khác chạy) → theo dõi tiến độ
+      startCrawlPolling();
+    } else {
+      setCrawlFeedback({
+        type: "error",
+        message: res.message || "Có lỗi xảy ra trong quá trình quét thông báo TLU.",
+      });
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadData().then(async () => {
+      // Mở trang khi đang có phiên quét chạy nền → tiếp tục theo dõi
+      const st = await getCrawlerStatus();
+      if (st?.job?.running) startCrawlPolling();
+    });
+    return stopCrawlPolling;
   }, []);
 
   const handleFileUpload = async (files: FileList | null) => {
@@ -343,6 +377,33 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {isCrawling && (
+            <div className="space-y-1.5 p-3 rounded-xl border border-sky-200 bg-white/80 text-xs">
+              <div className="flex items-center justify-between gap-2 font-medium text-slate-700">
+                <span className="truncate">
+                  {crawlJob?.current
+                    ? `Đang xử lý: ${crawlJob.current}`
+                    : crawlJob && crawlJob.total > 0
+                    ? "Đang hoàn tất..."
+                    : "Đang lấy danh sách thông báo từ tlu.edu.vn..."}
+                </span>
+                {crawlJob && crawlJob.total > 0 && (
+                  <span className="flex-shrink-0 text-sky-700">
+                    {crawlJob.done}/{crawlJob.total}
+                  </span>
+                )}
+              </div>
+              <div className="h-1.5 rounded-full bg-sky-100 overflow-hidden">
+                <div
+                  className="h-full bg-sky-600 transition-all duration-500"
+                  style={{
+                    width: `${crawlJob && crawlJob.total > 0 ? Math.round((crawlJob.done / crawlJob.total) * 100) : 5}%`,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {crawlFeedback && (
             <div
               className={`flex items-center gap-2 text-xs font-medium p-3 rounded-xl border ${
@@ -566,6 +627,8 @@ export default function AdminPage() {
                                   isOpen: true,
                                   title: doc.original_name,
                                   url: previewUrl,
+                                  // Tên file thật (bài cào web có original_name là tiêu đề, không có đuôi)
+                                  fileName: doc.file_type ? `${doc.filename}.${doc.file_type}` : doc.original_name,
                                 })
                               }
                               className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -655,6 +718,7 @@ export default function AdminPage() {
         onClose={() => setPreviewDoc((prev) => ({ ...prev, isOpen: false }))}
         title={previewDoc.title}
         docUrl={previewDoc.url}
+        fileName={previewDoc.fileName}
       />
     </div>
   );

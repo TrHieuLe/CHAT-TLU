@@ -56,6 +56,31 @@ export type UserMemoryItem = {
   updated_at?: string;
 };
 
+export type CrawlArticleResult = {
+  post_id?: number | string;
+  title: string;
+  url?: string;
+  status: "new" | "updated" | "skipped" | "failed";
+  chunk_count: number;
+  error?: string | null;
+};
+
+export type CrawlJob = {
+  running: boolean;
+  max_articles: number;
+  started_at: string | null;
+  finished_at: string | null;
+  total: number;
+  done: number;
+  current: string | null;
+  new: number;
+  updated: number;
+  skipped: number;
+  failed: number;
+  errors: string[];
+  articles: CrawlArticleResult[];
+};
+
 export type CrawlerStatus = {
   total_crawled_articles: number;
   total_crawled_chunks: number;
@@ -65,5 +90,6 @@ export type CrawlerStatus = {
     chunks: number;
     created_at?: string;
   }[];
+  job?: CrawlJob;
 };
 

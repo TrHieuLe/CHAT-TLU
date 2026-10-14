@@ -1,5 +1,6 @@
 from pathlib import Path
 import shutil
+import unicodedata
 from typing import BinaryIO
 
 from fastapi import UploadFile
@@ -85,50 +86,72 @@ class LocalStorageService:
         finally:
             file.file.close()
 
-    def find_file(self, path: Path | str) -> Path | None:
+    @staticmethod
+    def _normalize_name(name: str) -> str:
+        name = unicodedata.normalize("NFC", name).lower()
+        return name.replace(" ", "").replace("_", "").replace("-", "")
+
+    @staticmethod
+    def _inside(path: Path, root: Path) -> Path | None:
+        """Trả về path đã resolve nếu nó là file nằm trong root (chặn ../ và đường dẫn tuyệt đối)."""
+        try:
+            resolved = path.resolve()
+            if resolved.is_file() and resolved.is_relative_to(root.resolve()):
+                return resolved
+        except (OSError, ValueError):
+            pass
+        return None
+
+    def find_file(self, path: Path | str, fuzzy: bool = True) -> Path | None:
         """
-        Tìm kiếm file trong upload_dir (Backend/data) và các thư mục con:
-        1. Khớp chính xác tên file hoặc đường dẫn.
-        2. Khớp theo stem (tên không đuôi).
-        3. Khớp không phân biệt hoa thường hoặc khoảng trắng.
+        Tìm kiếm file trong upload_dir (Backend/data) và các thư mục con (bỏ qua images/):
+        1. Đường dẫn trực tiếp (chỉ nhận nếu nằm trong upload_dir / base_dir).
+        2. Khớp tên đầy đủ, rồi khớp stem (không phân biệt hoa thường, khoảng trắng, NFC/NFD).
+        3. Nếu fuzzy: khớp một phần, chọn ứng viên có độ dài stem gần với query nhất.
         """
-        query_str = str(path).strip()
+        query_str = unicodedata.normalize("NFC", str(path).strip())
         if not query_str:
             return None
 
-        # 1. Thử đường dẫn trực tiếp
-        direct = self.upload_dir / query_str
-        if direct.is_file():
-            return direct
+        for root in (self.upload_dir, self.base_dir):
+            direct = self._inside(root / query_str, root)
+            if direct:
+                return direct
 
-        # 2. Thử tìm kiếm trong base_dir (data/storage)
-        storage_direct = self.base_dir / query_str
-        if storage_direct.is_file():
-            return storage_direct
+        query_name = self._normalize_name(Path(query_str).name)
+        query_stem = self._normalize_name(Path(query_str).stem)
 
-        query_clean = query_str.lower().replace(" ", "").replace("_", "").replace("-", "")
-        query_stem = Path(query_str).stem.lower().replace(" ", "").replace("_", "").replace("-", "")
+        stem_match: Path | None = None
+        fuzzy_match: Path | None = None
+        fuzzy_gap: int | None = None
 
-        # 3. Quét đệ quy trong thư mục data/
         for candidate in self.upload_dir.rglob("*"):
             if not candidate.is_file():
                 continue
-            cand_name = candidate.name.lower().replace(" ", "").replace("_", "").replace("-", "")
-            cand_stem = candidate.stem.lower().replace(" ", "").replace("_", "").replace("-", "")
+            rel_parts = candidate.relative_to(self.upload_dir).parts
+            if "images" in rel_parts:
+                continue
+            cand_name = self._normalize_name(candidate.name)
+            cand_stem = self._normalize_name(candidate.stem)
 
-            # Khớp tên đầy đủ
-            if cand_name == query_clean:
+            if cand_name == query_name:
                 return candidate
 
-            # Khớp tên gốc (bỏ đuôi)
-            if cand_stem == query_stem:
-                return candidate
+            if stem_match is None and cand_stem == query_stem:
+                stem_match = candidate
+                continue
 
-            # Khớp một phần nếu query đủ dài (> 6 ký tự)
-            if len(query_stem) >= 6 and (query_stem in cand_stem or cand_stem in query_stem):
-                return candidate
+            if (
+                fuzzy
+                and len(query_stem) >= 6
+                and len(cand_stem) >= 6
+                and (query_stem in cand_stem or cand_stem in query_stem)
+            ):
+                gap = abs(len(cand_stem) - len(query_stem))
+                if fuzzy_gap is None or gap < fuzzy_gap:
+                    fuzzy_match, fuzzy_gap = candidate, gap
 
-        return None
+        return stem_match or fuzzy_match
 
     def download_v2(self, path: Path | str):
         target = self.find_file(path)
@@ -140,7 +163,8 @@ class LocalStorageService:
             return None
 
     def delete_v2(self, path: Path | str) -> bool:
-        target = self.find_file(path)
+        # Không dùng khớp mờ khi xóa để tránh xóa nhầm file khác
+        target = self.find_file(path, fuzzy=False)
         if target and target.is_file():
             try:
                 target.unlink()
