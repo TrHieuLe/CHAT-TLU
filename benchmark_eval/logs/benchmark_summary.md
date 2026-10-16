@@ -80,30 +80,40 @@
 
 ## 4. Bảng 4.4: Chất Lượng Câu Trả Lời (RAG Triad) — ĐO THẬT
 
-*Đo lúc 2026-10-16 12:43:30 bởi `Backend/scripts/eval_answers.py` trên 145 câu (`tlu_answer_eval.json`: 120 câu trả lời được, trong đó 39 câu có đáp án chuẩn; 25 câu tài liệu không có).
+*Đo lúc 2026-10-16 15:18:50 bởi `Backend/scripts/eval_answers.py` trên 145 câu (`tlu_answer_eval.json`: 120 câu trả lời được, trong đó 39 câu có đáp án chuẩn; 25 câu tài liệu không có).
 Model trả lời `gemini-flash-lite-latest` (temperature 0.7, top-k 8, reranker tắt); judge `gemini-flash-latest`.
-Số trong ngoặc vuông là khoảng tin cậy 95% (bootstrap); n là số câu tính chỉ số.*
+Số trong ngoặc vuông là khoảng tin cậy 95% (bootstrap); n là số câu tính chỉ số. Cột "StudyBot (lần đo đầu)" là số đo lúc 12:43:30 cùng ngày, trước khi sửa truy xuất và trích dẫn (xem "Thay đổi giữa hai lần đo").*
 
 > Thay cho bảng cũ: số liệu trước đây (Faithfulness 0.99, trích dẫn 98.7%, cột "RAG Naive") được **sinh ngẫu nhiên bằng `np.random.beta`**, không phải số đo, nên đã bị loại bỏ.
 
-| Chỉ số | LLM thuần (không RAG) | StudyBot |
-|---|---|---|
-| Faithfulness (khẳng định có căn cứ trong tài liệu) | 0.21 [0.17–0.26] (n=136) | 0.97 [0.95–0.99] (n=113) |
-| Answer Relevance (đúng trọng tâm) | 0.57 [0.51–0.63] (n=120) | 0.85 [0.80–0.90] (n=120) |
-| Context Relevance (ngữ cảnh đủ để trả lời) | N/A | 0.78 [0.71–0.86] (n=120) |
-| Correctness (tỷ lệ ý bắt buộc nêu đúng) | 0.43 [0.29–0.58] (n=39) | 0.98 [0.94–1.00] (n=39) |
-| Tỷ lệ câu nêu SAI ý bắt buộc | 46.2% [31–62] (n=39) | 0.0% [0–0] (n=39) |
-| Từ chối đúng khi tài liệu không có | 28.0% [12–48] (n=25) | 100.0% [100–100] (n=25) |
-| Từ chối sai khi tài liệu có | 1.1% [0–3] (n=89) | 0.0% [0–0] (n=94) |
-| Tỷ lệ có trích dẫn Điều/Khoản | 0.8% [0–3] (n=118) | 46.0% [37–55] (n=113) |
-| Tỷ lệ trích dẫn Điều không có trong tài liệu | 100.0% [100–100] (n=1) | 6.2% [0–15] (n=48) |
+| Chỉ số | LLM thuần (không RAG) | StudyBot (lần đo đầu) | StudyBot |
+|---|---|---|---|
+| Faithfulness (khẳng định có căn cứ trong tài liệu) | 0.21 [0.17–0.26] (n=136) | 0.97 [0.95–0.99] (n=113) | 0.99 [0.97–1.00] (n=118) |
+| Answer Relevance (đúng trọng tâm) | 0.57 [0.51–0.63] (n=120) | 0.85 [0.80–0.90] (n=120) | 0.93 [0.89–0.96] (n=120) |
+| Context Relevance (ngữ cảnh đủ để trả lời) | N/A | 0.78 [0.71–0.86] (n=120) | 0.86 [0.79–0.92] (n=120) |
+| Correctness (tỷ lệ ý bắt buộc nêu đúng) | 0.43 [0.29–0.58] (n=39) | 0.98 [0.94–1.00] (n=39) | 0.99 [0.96–1.00] (n=39) |
+| Tỷ lệ câu nêu SAI ý bắt buộc | 46.2% [31–62] (n=39) | 0.0% [0–0] (n=39) | 0.0% [0–0] (n=39) |
+| Từ chối đúng khi tài liệu không có | 28.0% [12–48] (n=25) | 100.0% [100–100] (n=25) | 100.0% [100–100] (n=25) |
+| Từ chối sai khi tài liệu có | 1.1% [0–3] (n=89) | 0.0% [0–0] (n=94) | 0.0% [0–0] (n=103) |
+| Tỷ lệ có trích dẫn Điều/Khoản | 0.8% [0–3] (n=118) | 46.0% [37–55] (n=113) | 20.3% [14–28] (n=118) |
+| Tỷ lệ trích dẫn Điều không có trong tài liệu | 100.0% [100–100] (n=1) | 6.2% [0–15] (n=48) | 0.0% [0–0] (n=24) |
+
+Truy xuất đo riêng (`eval_retrieval_variants.py --testset tlu_testset_clean.json`, 120 câu, Hybrid RRF): Hit@4 94.2% → **99.2%**, MRR@4 0.876 → **0.930**.
+
+### Thay đổi giữa hai lần đo
+- **Tách chunk file .txt theo cấu trúc** (`restructure_titles._txt_tree`, `doc_preprocessor.chunk_doc`): dòng IN HOA và dòng "Phần N của văn bản…" là mục, dòng "N. …" là bản ghi; mỗi mục/bản ghi thành một chunk riêng mang đường dẫn tiêu đề (vd `ĐIỂM CHUẨN … > CHI TIẾT … > 6. Ngành Công nghệ thông tin`). Trước đó cả file là một nút, mỗi chunk ~800 token gộp hơn chục ngành, nên chunk xếp đầu cho câu "điểm chuẩn ngành CNTT" thậm chí không chứa ngành CNTT. Sửa luôn lỗi overlap cắt 100 ký tự đầu câu mới dán sang chunk trước (chunk sau bắt đầu giữa từ).
+- **Dữ liệu**: `DiemChuan.txt`, `ChiTieu.txt` thêm dòng `TÊN VĂN BẢN:` và mục "TỔNG HỢP … TẤT CẢ CÁC NGÀNH" (tính từ chính file; tổng chỉ tiêu 5350). Đã ingest lại 13 file .txt.
+- **Gộp lên mục tổng hợp** (`retriever._rollup`): khi ≥3/4 chunk là bản ghi của cùng một tài liệu (câu hỏi bao quát như "điểm chuẩn của trường"), thêm các mục "TỔNG HỢP …" của tài liệu đó, giữ bản ghi khớp nhất.
+- **Từ đồng nghĩa** (`query_enhancer.TLU_SYNONYMS`): điểm đầu vào/trúng tuyển → điểm chuẩn tuyển sinh, chỉ tiêu → chỉ tiêu tuyển sinh, hạ bằng, cộng điểm rèn luyện, thành tựu.
+- **Trích dẫn** (`chat._citation_rule` + SYSTEM_INSTRUCTION): prompt liệt kê số Điều có nguyên văn trong ngữ cảnh theo từng tài liệu, chỉ cho trích các số đó; câu hỏi về năm/bậc/đối tượng tài liệu không có phải từ chối trước (trước đó câu "điểm chuẩn CNTT năm 2035" trả bảng điểm hiện tại).
+- Cách đo lại: sinh lại toàn bộ 145 câu StudyBot, sau đó sinh lại 56 câu có ngữ cảnh thay đổi do lần sửa cuối (tách theo "Phần N", gộp mục tổng hợp); 89 câu còn lại có prompt giống hệt nên giữ câu trả lời. Cột LLM thuần giữ từ lần đo đầu (không phụ thuộc truy xuất).
 
 ### Phân tích số liệu Bảng 4.4:
-- **Khi tìm được tài liệu, câu trả lời bám tài liệu rất sát**: 97% khẳng định có căn cứ trong ngữ cảnh; với 39 câu có đáp án chuẩn, StudyBot nêu đúng 98% ý bắt buộc và không nêu sai ý nào. LLM thuần chỉ đúng 43% và nêu sai ý bắt buộc ở 46% số câu.
+- **Khi tìm được tài liệu, câu trả lời bám tài liệu rất sát**: 99% khẳng định có căn cứ trong ngữ cảnh; với 39 câu có đáp án chuẩn, StudyBot nêu đúng 99% ý bắt buộc và không nêu sai ý nào. LLM thuần chỉ đúng 43% và nêu sai ý bắt buộc ở 46% số câu.
 - **Biết từ chối**: StudyBot từ chối đúng 25/25 câu tài liệu không có và không từ chối sai câu nào khi ngữ cảnh đủ. LLM thuần chỉ từ chối 28%, còn lại tự bịa câu trả lời cụ thể (vd phí gửi xe "50.000 đồng/tháng", "trường có bể bơi", một mã số thuế).
-- **Điểm yếu chính nằm ở truy xuất**: chỉ 78% câu có ngữ cảnh đủ để trả lời. Lỗi lặp lại: câu hỏi điểm chuẩn/điểm đầu vào ngành CNTT kéo về văn bản *Chuẩn đầu ra CNTT* thay vì `DiemChuan.txt` (trùng từ "công nghệ thông tin"). Khi thiếu ngữ cảnh StudyBot từ chối hoặc trả lời lệch trọng tâm — nguyên nhân chính khiến Answer Relevance chỉ đạt 0.85.
-- **Trích dẫn**: 46% câu trả lời có nêu Điều/Khoản. Phần lớn khẳng định bị judge đánh "không có căn cứ" là **số Điều/Khoản sai** (vd ghi "Điều 14" trong khi quy định nằm ở Điều 13) — 6% câu trích số Điều không xuất hiện trong ngữ cảnh.
-- **Hiệu chỉnh judge** (`eval_answers.py --calibrate`, 30 mẫu ngẫu nhiên seed 42 — 12 StudyBot, 18 LLM thuần; nhãn trong `benchmark_eval/data/judge_calibration_tlu_answer_eval.csv`):
+- **Truy xuất cải thiện nhưng vẫn là điểm yếu chính**: câu có ngữ cảnh đủ tăng từ 94/120 lên 103/120 (0.78 → 0.86). Mức này **chỉ chạm cận trên khoảng tin cậy cũ (0.858)**, chưa vượt hẳn; Answer Relevance thì vượt ra ngoài khoảng tin cậy cũ (0.85 [0.80–0.90] → 0.93, hai khoảng vẫn chồng nhau một chút ở 0.89–0.90). Các câu điểm chuẩn/chỉ tiêu ngành CNTT (id 29, 42, 76, 146, 155, 191) và chỉ tiêu toàn trường (28, 37) đã có đủ ngữ cảnh. 17 câu còn thiếu: 4 câu "điểm chuẩn khoa kinh tế" (dữ liệu không ghi ngành nào thuộc khoa nào — thiếu dữ liệu thật, không phải lỗi truy xuất), câu hỏi so sánh học phí theo khoa/khối, chuẩn đầu ra tiếng Anh tổng quát, học bổng CTTT, kết nối Wifi; vài câu (41, 62, 174) dao động giữa các lần chạy do temperature 0.7 và judge.
+- **Trích dẫn**: không còn câu nào trích số Điều không có trong ngữ cảnh (6.2% → 0%). Đổi lại tỷ lệ câu có nêu Điều/Khoản giảm 46% → 20%: model không còn tự gán số Điều cho tài liệu không chia Điều (file .txt tổng hợp) mà chỉ nêu tên tài liệu.
+- **Hiệu chỉnh judge** (thực hiện trên câu trả lời của lần đo đầu; `eval_answers.py --calibrate`, 30 mẫu ngẫu nhiên seed 42 — 12 StudyBot, 18 LLM thuần; nhãn trong `benchmark_eval/data/judge_calibration_tlu_answer_eval.csv`):
   Faithful đồng thuận 28/28 (κ = 1.00); Refused đồng thuận 29/30 (κ = 0.65 — κ thấp do chỉ 2 mẫu từ chối, mẫu lệch là id 1015 trả lời vòng vo không đưa con số).
   ⚠ Nhãn đối chiếu do **Claude Opus 5.5 chấm, không phải người**; hai model khác họ nên không trùng thiên lệch, nhưng trước khi đưa vào báo cáo chính thức nên có người chấm lại ít nhất một phần. 18/30 mẫu là LLM thuần (dễ phân biệt), nên đồng thuận trên riêng các mẫu StudyBot mới là phép thử khó (Faithful 11/11, Refused 12/12 khớp).
 

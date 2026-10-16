@@ -122,3 +122,13 @@ def test_cache_api_endpoints():
     resp_clear = client.delete("/api/chat/cache/clear")
     assert resp_clear.status_code == 200
     assert resp_clear.json()["ok"] is True
+
+
+def test_query_enhancer_synonyms():
+    """Cách nói thường ngày được bổ sung thuật ngữ có trong văn bản."""
+    enh = enhance_query("Cho tôi điểm đầu vào của khoa công nghệ thông tin")
+    assert "điểm đầu vào (điểm chuẩn tuyển sinh)" in enh
+    assert "chỉ tiêu (chỉ tiêu tuyển sinh)" in enhance_query("Chỉ tiêu của trường").lower()
+    # đã có thuật ngữ thì không lặp lại
+    assert enhance_query("chỉ tiêu tuyển sinh ngành luật") == "chỉ tiêu tuyển sinh ngành luật"
+    assert "giảm mức xếp loại tốt nghiệp" in enhance_query("sinh viên bị hạ bằng khi nào")

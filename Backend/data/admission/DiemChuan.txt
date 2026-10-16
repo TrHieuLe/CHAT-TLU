@@ -1,3 +1,4 @@
+TÊN VĂN BẢN: ĐIỂM CHUẨN (ĐIỂM TRÚNG TUYỂN, ĐIỂM ĐẦU VÀO) CÁC NGÀNH - TRƯỜNG ĐẠI HỌC THỦY LỢI
 CHI TIẾT TỔ HỢP MÔN VÀ ĐIỂM CHUẨN TỪNG NGÀNH
 1. Ngành Xây dựng và quản lý công trình thủy (Kỹ thuật xây dựng công trình thủy)
 - Tổ hợp môn: A00; A01; D01; D07; C01; C02; X02; X06
@@ -195,3 +196,47 @@ TỔNG HỢP CÁC NGÀNH CÓ ĐIỂM CHUẨN CAO NHẤT VÀ THẤP NHẤT
 - Ngành có điểm chuẩn thấp nhất theo phương thức xét học bạ: Chương trình tiên tiến ngành Kỹ thuật xây dựng (21.00 điểm).
 - Ngành có điểm chuẩn cao nhất theo phương thức đánh giá tư duy: Kỹ thuật điều khiển và tự động hóa (65.43 điểm).
 - Ngành có điểm chuẩn thấp nhất theo phương thức đánh giá tư duy: Kỹ thuật môi trường (46.67 điểm).
+TỔNG HỢP ĐIỂM CHUẨN TẤT CẢ CÁC NGÀNH (THPT: ĐIỂM THI TRUNG HỌC PHỔ THÔNG; HỌC BẠ: ĐIỂM XÉT HỌC BẠ)
+- Ngành Xây dựng và quản lý công trình thủy (Kỹ thuật xây dựng công trình thủy): THPT 18.48; học bạ 23.46
+- Ngành Kỹ thuật tài nguyên nước: THPT 18.49; học bạ 23.48
+- Ngành Tài nguyên nước và môi trường (Thủy văn học): THPT 18.00; học bạ 22.66
+- Ngành Kỹ thuật xây dựng dân dụng và công nghiệp (Kỹ thuật xây dựng): THPT 18.76; học bạ 23.72
+- Ngành Kỹ thuật cơ khí: THPT 22.60; học bạ 27.18; đánh giá tư duy 59.42
+- Ngành Công nghệ thông tin: THPT 23.23; học bạ 27.89; đánh giá tư duy 61.94
+- Ngành Kỹ thuật cấp thoát nước: THPT 18.00; học bạ 22.67
+- Ngành Kỹ thuật môi trường: THPT 17.75; học bạ 22.27; đánh giá tư duy 46.67
+- Ngành Xây dựng và quản lý hạ tầng đô thị (Kỹ thuật cơ sở hạ tầng): THPT 19.00; học bạ 23.93
+- Ngành Công nghệ kỹ thuật xây dựng: THPT 19.48; học bạ 24.34
+- Ngành Kỹ thuật điện: THPT 22.00; học bạ 26.50; đánh giá tư duy 56.98
+- Ngành Kỹ thuật xây dựng công trình giao thông (gồm các chương trình: Công nghệ và kỹ thuật xây dựng cầu, đường; Công nghệ và kỹ thuật Đường sắt tốc độ cao và đường sắt đô thị): THPT 18.50; học bạ 23.50
+- Ngành Quản lý xây dựng: THPT 19.96; học bạ 24.75
+- Ngành Hệ thống thông tin: THPT 21.75; học bạ 26.29; đánh giá tư duy 56.02
+- Ngành Kỹ thuật phần mềm: THPT 21.55; học bạ 26.11; đánh giá tư duy 55.18
+- Ngành Kỹ thuật hóa học: THPT 20.50; học bạ 25.21; đánh giá tư duy 52.78
+- Ngành Công nghệ sinh học: THPT 18.76; học bạ 23.72; đánh giá tư duy 48.92
+- Ngành Kỹ thuật cơ điện tử: THPT 23.33; học bạ 28.00; đánh giá tư duy 62.34
+- Ngành Kỹ thuật điều khiển và tự động hóa: THPT 24.10; học bạ 28.87; đánh giá tư duy 65.43
+- Ngành Công nghệ chế tạo máy (Công nghệ sản xuất tiên tiến, tự động hóa thiết kế cơ khí): THPT 20.75; học bạ 25.43; đánh giá tư duy 53.34
+- Ngành Kỹ thuật ô tô: THPT 22.50; học bạ 27.06; đánh giá tư duy 58.98
+- Ngành Kỹ thuật điện tử - viễn thông (gồm các chương trình: Kỹ thuật điện tử - viễn thông; Công nghệ bán dẫn và thiết kế vi mạch): THPT 22.50; học bạ 27.06; đánh giá tư duy 59.02
+- Ngành Trí tuệ nhân tạo và khoa học dữ liệu: THPT 22.12; học bạ 26.63; đánh giá tư duy 57.48
+- Ngành An ninh mạng: THPT 22.04; học bạ 26.54; đánh giá tư duy 57.14
+- Ngành Kỹ thuật Robot và Điều khiển thông minh: THPT 21.15; học bạ 25.77; đánh giá tư duy 54.22
+- Chương trình tiên tiến ngành Kỹ thuật xây dựng: THPT 17.00; học bạ 21.00
+- Chương trình tiên tiến ngành Kỹ thuật tài nguyên nước: THPT 17.35; học bạ 21.59
+- Ngành Ngôn ngữ Anh: THPT 22.59; học bạ 27.17; đánh giá tư duy 59.38
+- Ngành Ngôn ngữ Trung Quốc: THPT 25.45; học bạ 30.00
+- Ngành Luật: THPT 25.17; học bạ 30.00
+- Ngành Luật kinh tế: THPT 25.50; học bạ 30.00
+- Ngành Kinh tế: THPT 21.91; học bạ 26.42
+- Ngành Quản trị kinh doanh: THPT 22.10; học bạ 26.61
+- Ngành Kế toán: THPT 22.25; học bạ 26.78
+- Ngành Kinh tế xây dựng: THPT 20.73; học bạ 25.41
+- Ngành Thương mại điện tử: THPT 22.98; học bạ 27.61
+- Ngành Quản trị dịch vụ du lịch và lữ hành: THPT 21.48; học bạ 26.05
+- Ngành Logistics và quản lý chuỗi cung ứng: THPT 23.00; học bạ 27.63
+- Ngành Tài chính - Ngân hàng: THPT 22.26; học bạ 26.79
+- Ngành Kiểm toán: THPT 21.44; học bạ 26.02
+- Ngành Kinh tế số: THPT 22.11; học bạ 26.62
+- Chương trình Kế toán tích hợp chứng chỉ quốc tế: THPT 18.09; học bạ 22.82
+- Chương trình Công nghệ tài chính: THPT 19.50; học bạ 24.36

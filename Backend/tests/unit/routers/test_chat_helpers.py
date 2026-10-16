@@ -121,3 +121,28 @@ class TestSafeChunkText:
         chunk = MagicMock()
         chunk.candidates = [candidate]
         assert _safe_chunk_text(chunk) == "Part 1 Part 2"
+
+
+class TestCitationRule:
+    """Danh sách số Điều được phép trích lấy từ chính ngữ cảnh, theo từng tài liệu."""
+
+    @staticmethod
+    def _chunk(doc, content):
+        c = MagicMock()
+        c.payload = {"doc_name": doc, "content": content}
+        return c
+
+    def test_lists_dieu_per_document(self):
+        from app.routers.chat import _citation_rule
+        rule = _citation_rule([
+            self._chunk("QĐ-1226.docx", "Quy chế > Điều 13. Công nhận tốt nghiệp ... theo Điều 11"),
+            self._chunk("QĐ-1226.docx", "Điều 10. Đánh giá học phần"),
+            self._chunk("QuyDinhHocTap.txt", "- Xếp loại tốt nghiệp Giỏi ..."),
+        ])
+        assert "QĐ-1226.docx: Điều 10, Điều 11, Điều 13" in rule
+        assert "QuyDinhHocTap.txt" not in rule
+
+    def test_no_dieu_in_context_forbids_numbers(self):
+        from app.routers.chat import _citation_rule
+        rule = _citation_rule([self._chunk("DiemChuan.txt", "6. Ngành Công nghệ thông tin")])
+        assert "KHÔNG ghi số Điều" in rule

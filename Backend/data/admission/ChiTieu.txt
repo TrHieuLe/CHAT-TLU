@@ -1,3 +1,4 @@
+TÊN VĂN BẢN: CHỈ TIÊU TUYỂN SINH, MÃ NGÀNH VÀ PHƯƠNG THỨC XÉT TUYỂN CÁC NGÀNH - TRƯỜNG ĐẠI HỌC THỦY LỢI
 THÔNG TIN ĐĂNG KÝ VÀ LỆ PHÍ
 - Thời gian đăng ký trực tuyến hồ sơ học bạ và ưu tiên: Từ ngày 20/05/2025 đến ngày 10/07/2025. Đăng ký trực tiếp trên hệ thống My TLU hoặc trang web dkxtdh.tlu.edu.vn.
 - Lệ phí xét tuyển (áp dụng cho tất cả các phương thức): 20.000 đồng / 1 nguyện vọng.
@@ -182,3 +183,48 @@ THÔNG TIN CHI TIẾT TỪNG NGÀNH ĐÀO TẠO
 - Chỉ tiêu: 30 sinh viên
 - Phương thức xét tuyển: Xét tuyển thẳng, Xét tuyển kết hợp kết quả học tập Trung học phổ thông, Xét tuyển kết quả thi tốt nghiệp Trung học phổ thông.
 - Ghi chú: Chương trình hợp tác đào tạo với Đại học Bang Colorado (Hoa Kỳ).
+TỔNG HỢP CHỈ TIÊU TUYỂN SINH TẤT CẢ CÁC NGÀNH
+- Tổng chỉ tiêu tuyển sinh của Trường Đại học Thủy lợi (cộng chỉ tiêu 43 ngành/chương trình ở trên): 5350 sinh viên
+- Ngành Xây dựng và quản lý công trình thủy (Kỹ thuật xây dựng công trình thủy) (TLA101): 150 sinh viên
+- Ngành Kỹ thuật xây dựng dân dụng và công nghiệp (Kỹ thuật xây dựng) (TLA104): 280 sinh viên
+- Ngành Công nghệ kỹ thuật xây dựng (TLA111): 210 sinh viên
+- Ngành Kỹ thuật xây dựng công trình giao thông (TLA113): 150 sinh viên
+- Ngành Quản lý xây dựng (TLA114): 210 sinh viên
+- Ngành Kỹ thuật tài nguyên nước (TLA102): 100 sinh viên
+- Ngành Kỹ thuật cấp thoát nước (TLA107): 100 sinh viên
+- Ngành Xây dựng và quản lý hạ tầng đô thị (Kỹ thuật cơ sở hạ tầng) (TLA110): 120 sinh viên
+- Ngành Tài nguyên nước và môi trường (Thủy văn học) (TLA103): 80 sinh viên
+- Ngành Kỹ thuật cơ khí (TLA105): 140 sinh viên
+- Ngành Công nghệ chế tạo máy (TLA122): 100 sinh viên
+- Ngành Kỹ thuật Ô tô (TLA123): 140 sinh viên
+- Ngành Kỹ thuật cơ điện tử (TLA120): 120 sinh viên
+- Ngành Công nghệ thông tin (TLA106): 120 sinh viên
+- Ngành Hệ thống thông tin (TLA116): 120 sinh viên
+- Ngành Kỹ thuật phần mềm (TLA117): 120 sinh viên
+- Ngành Trí tuệ nhân tạo và khoa học dữ liệu (TLA126): 120 sinh viên
+- Ngành An ninh mạng (TLA127): 120 sinh viên
+- Ngành Kỹ thuật điện (TLA112): 180 sinh viên
+- Ngành Kỹ thuật điều khiển và tự động hóa (TLA121): 120 sinh viên
+- Ngành Kỹ thuật điện tử - viễn thông (TLA124): 180 sinh viên
+- Ngành Kỹ thuật Robot và Điều khiển thông minh (TLA128): 120 sinh viên
+- Ngành Kinh tế (TLA401): 130 sinh viên
+- Ngành Kinh tế xây dựng (TLA404): 140 sinh viên
+- Ngành Logistics và quản lý chuỗi cung ứng (TLA407): 140 sinh viên
+- Ngành Thương mại điện tử (TLA405): 120 sinh viên
+- Ngành Kinh tế số (TLA410): 70 sinh viên
+- Ngành Tài chính Ngân hàng (TLA408): 120 sinh viên
+- Chương trình Công nghệ tài chính (Tài chính Ngân hàng) (TLA412): 60 sinh viên
+- Ngành Kiểm toán (TLA409): 120 sinh viên
+- Ngành Quản trị kinh doanh (TLA402): 150 sinh viên
+- Ngành Kế toán (TLA403): 120 sinh viên
+- Chương trình Kế toán tích hợp chứng chỉ quốc tế (Kế toán) (TLA411): 60 sinh viên
+- Ngành Quản trị dịch vụ du lịch và lữ hành (TLA406): 120 sinh viên
+- Ngành Kỹ thuật môi trường (TLA109): 120 sinh viên
+- Ngành Công nghệ sinh học (TLA119): 120 sinh viên
+- Ngành Kỹ thuật hóa học (TLA118): 120 sinh viên
+- Ngành Luật (TLA301): 120 sinh viên
+- Ngành Luật kinh tế (TLA302): 120 sinh viên
+- Ngành Ngôn ngữ Trung Quốc (TLA204): 100 sinh viên
+- Ngành Ngôn ngữ Anh (TLA203): 140 sinh viên
+- Chương trình tiên tiến ngành Kỹ thuật xây dựng (TLA201): 30 sinh viên
+- Chương trình tiên tiến ngành Kỹ thuật tài nguyên nước (TLA202): 30 sinh viên

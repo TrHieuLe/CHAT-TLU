@@ -46,7 +46,10 @@ def chunk_doc(doc: Dict[str, Any], model: str) -> List[dict]:
         current_chunk = {
             "text": "",
             "pages": set(),
+            "has_body": False,
         }
+
+    reset_buffer()
 
     def header() -> str:
         valid_path = [p for p in path if p]
@@ -54,17 +57,20 @@ def chunk_doc(doc: Dict[str, Any], model: str) -> List[dict]:
             return ""
         return " > ".join(valid_path) + ".\n"
 
-    def flush() -> None:
+    def flush(require_body: bool = False) -> None:
         nonlocal current_chunk
         text = current_chunk["text"].strip()
-        if text:
+        if not text:
+            return
+        # require_body: bỏ chunk chỉ có tiêu đề (vd tiêu đề mục ngay trước bản ghi standalone đầu tiên)
+        if current_chunk["has_body"] or not require_body:
             chunks.append(
                 {
                     "text": text,
                     "pages": sorted(list(current_chunk["pages"])),
                 }
             )
-            reset_buffer()
+        reset_buffer()
 
     def ensure_header() -> None:
         if not current_chunk["text"]:
@@ -77,7 +83,15 @@ def chunk_doc(doc: Dict[str, Any], model: str) -> List[dict]:
         except Exception:
             return max(1, int(len(text.split()) * 1.3))
 
-    def add_piece(txt: str, pages: List[int]) -> None:
+    def overlap_tail(text: str, overlap: int) -> str:
+        """Đoạn cuối ~overlap ký tự của chunk vừa đóng, cắt ở ranh giới từ, để lặp lại đầu chunk sau."""
+        if overlap <= 0 or len(text) <= overlap:
+            return ""
+        tail = text[-overlap:]
+        cut = tail.find(" ")
+        return tail[cut + 1:].strip() if cut >= 0 else ""
+
+    def add_piece(txt: str, pages: List[int], body: bool = True) -> None:
         nonlocal current_chunk
 
         txt = (txt or "").strip()
@@ -92,16 +106,18 @@ def chunk_doc(doc: Dict[str, Any], model: str) -> List[dict]:
         chunk_size = int(getattr(settings, "CHUNK_SIZE", 800))
         overlap = max(0, int(getattr(settings, "OVERLAP", 80)))
 
-        if token_count > chunk_size and current_chunk["text"].strip():
-            if overlap > 0:
-                current_chunk["text"] += piece[:overlap]
+        if token_count > chunk_size and current_chunk["has_body"]:
+            # Chunk sau mở đầu bằng tiêu đề + phần cuối chunk trước, rồi mới tới đoạn mới (nguyên vẹn).
+            # Trước đây overlap cắt piece[:overlap] dán vào chunk trước, làm chunk sau mất đầu câu.
+            tail = overlap_tail(current_chunk["text"], overlap)
             flush()
             ensure_header()
-            if overlap > 0:
-                piece = piece[overlap:]
+            piece = (tail + "\n" if tail else "") + txt
 
         current_chunk["text"] += piece
         current_chunk["pages"].update(pages or [])
+        if body:
+            current_chunk["has_body"] = True
 
     def dfs(node: Dict[str, Any]) -> None:
         nonlocal current_chunk
@@ -110,13 +126,17 @@ def chunk_doc(doc: Dict[str, Any], model: str) -> List[dict]:
             return
 
         node_pages = node.get("pages", []) or []
+        # Nút standalone (mục/bản ghi của file .txt) luôn bắt đầu và kết thúc một chunk riêng
+        standalone = bool(node.get("standalone"))
+        if standalone:
+            flush(require_body=True)
 
         node_title = (node.get("title") or "").strip()
         if node_title:
             path.append(node_title)
 
         if current_chunk["text"] and node_title:
-            add_piece(node_title + ".", node_pages)
+            add_piece(node_title + ".", node_pages, body=False)
 
         current_chunk["pages"].update(node_pages)
 
@@ -134,8 +154,11 @@ def chunk_doc(doc: Dict[str, Any], model: str) -> List[dict]:
                 current_chunk = backup_chunk
                 chunks[:] = backup_chunks
                 path[:] = backup_path
-                flush()
+                flush(require_body=bool(child.get("standalone")))
                 dfs(child)
+
+        if standalone:
+            flush(require_body=True)
 
         if node_title and path:
             path.pop()

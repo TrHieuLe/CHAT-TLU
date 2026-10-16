@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import re
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Any
 
@@ -39,6 +40,42 @@ def _embed_cache_put(key: str, value: tuple) -> None:
 
 def clear_embed_cache() -> None:
     _embed_cache.clear()
+
+
+# Header chunk do chunk_doc dựng: "Tài liệu > Mục > 6. Ngành Công nghệ thông tin." (bản ghi đánh số của file .txt)
+_RECORD_HEADER_RE = re.compile(r" > \d+\. [^>]*$")
+_SUMMARY_HEADER_RE = re.compile(r" > TỔNG HỢP\b")
+_ROLLUP_MIN_RECORDS = 3
+_ROLLUP_MAX_SUMMARIES = 2
+
+
+def _first_line(point) -> str:
+    payload = getattr(point, "payload", None) or {}
+    return (payload.get("content") or "").split("\n", 1)[0]
+
+
+def _is_record(point) -> bool:
+    return bool(_RECORD_HEADER_RE.search(_first_line(point)))
+
+
+def _rollup_doc(points: list) -> str | None:
+    """Tên tài liệu nếu ít nhất _ROLLUP_MIN_RECORDS chunk là bản ghi đánh số của cùng tài liệu đó."""
+    counts: dict[str, int] = {}
+    for p in points:
+        if _is_record(p):
+            doc = (p.payload or {}).get("doc_name", "")
+            counts[doc] = counts.get(doc, 0) + 1
+    doc, n = max(counts.items(), key=lambda kv: kv[1], default=("", 0))
+    return doc if doc and n >= _ROLLUP_MIN_RECORDS else None
+
+
+def merge_rollup(points: list, summaries: list, top_k: int) -> list:
+    """Giữ bản ghi khớp nhất, chèn các mục tổng hợp ngay sau, rồi lấp phần còn lại theo thứ tự cũ."""
+    seen = {str(p.id) for p in points}
+    extra = [s for s in summaries if str(s.id) not in seen][:_ROLLUP_MAX_SUMMARIES]
+    if not extra:
+        return points[:top_k]
+    return (points[:1] + extra + points[1:])[:top_k]
 
 
 def _to_list(x: Any):
@@ -189,8 +226,32 @@ class Retriever:
                 if point.payload is not None and isinstance(point.payload, dict):
                     point.payload["rerank_score"] = round(score, 4)
                 final_points.append(point)
-
-            return final_points
         except Exception as e:
             logger.warning("Reranker failed, returning top Qdrant results: %s", e)
-            return raw_points[:top_k]
+            final_points = raw_points[:top_k]
+
+        return await self._rollup(final_points, top_k, collection_name)
+
+    async def _rollup(self, points: list, top_k: int, collection_name: str) -> list:
+        """
+        Câu hỏi bao quát cả danh sách ("điểm chuẩn của trường", "chỉ tiêu tất cả các ngành") khớp đều với mọi
+        bản ghi nên top-k toàn bản ghi lẻ của một tài liệu. Khi đó thêm các mục "TỔNG HỢP ..." của tài liệu
+        đó (chunk bao quát cả danh sách), giữ bản ghi khớp nhất. Câu hỏi về một ngành vẫn có bản ghi đó đứng đầu.
+        """
+        doc = _rollup_doc(points)
+        if not doc or not self.async_client:
+            return points
+        try:
+            summaries, _ = await self.async_client.scroll(
+                collection_name=collection_name,
+                scroll_filter=Filter(must=[FieldCondition(key="doc_name", match=MatchValue(value=doc))]),
+                limit=256,
+                with_payload=True,
+            )
+        except Exception as e:
+            logger.warning("Rollup lookup failed for %s: %s", doc, e)
+            return points
+        summaries = [s for s in summaries if _SUMMARY_HEADER_RE.search(_first_line(s))]
+        # mục tổng hợp ngắn hơn (vd cao nhất/thấp nhất) xếp sau mục liệt kê đầy đủ
+        summaries.sort(key=lambda s: -len((s.payload or {}).get("content", "")))
+        return merge_rollup(points, summaries, top_k)

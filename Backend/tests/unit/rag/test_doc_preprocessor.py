@@ -59,3 +59,24 @@ class TestCountTokens:
         enc = tiktoken.get_encoding("cl100k_base")
         result = count_tokens("Xin chào Việt Nam", enc)
         assert result > 0
+
+
+class TestChunkDocOverlap:
+    """Khi chunk đầy, chunk sau lặp lại phần cuối chunk trước và giữ nguyên câu mới (không cắt giữa từ)."""
+
+    def test_overlap_repeats_tail_and_keeps_piece_whole(self, monkeypatch):
+        from app.core.config import settings
+        from app.rag.doc_preprocessor import chunk_doc
+
+        monkeypatch.setattr(settings, "CHUNK_SIZE", 40)
+        monkeypatch.setattr(settings, "OVERLAP", 30)
+        sentences = [f"Câu số {i} nói về quy định đào tạo đại học." for i in range(6)]
+        doc = {"title": "Tài liệu", "content": " ".join(sentences), "children": [], "pages": [1]}
+        chunks = [c["text"] for c in chunk_doc(doc, model="x")]
+
+        assert len(chunks) > 1
+        for text in chunks:
+            assert text.startswith("Tài liệu.")
+        for s in sentences:
+            # mỗi câu xuất hiện nguyên vẹn trong ít nhất một chunk
+            assert any(s in text for text in chunks)

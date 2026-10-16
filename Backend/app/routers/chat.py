@@ -12,6 +12,7 @@ FIXES:
 import asyncio
 import json
 import logging
+import re
 import uuid
 from dataclasses import dataclass, field
 from io import BytesIO
@@ -79,8 +80,10 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 SYSTEM_INSTRUCTION = """Bạn là StudyBot — trợ lý học vụ và quy chế đào tạo AI dành cho sinh viên Trường Đại học Thủy Lợi (TLU).
 
 Quy tắc nghiệp vụ:
-- CĂN CỨ VÀO TÀI LIỆU: Ưu tiên tối đa thông tin từ phần [CONTEXT] hoặc [BẢNG] được cung cấp. Nêu rõ nguồn tài liệu, số Điều, Khoản nếu có trong ngữ cảnh.
+- CĂN CỨ VÀO TÀI LIỆU: Ưu tiên tối đa thông tin từ phần [CONTEXT] hoặc [BẢNG] được cung cấp. Nêu rõ tên tài liệu nguồn.
+- TRÍCH DẪN ĐIỀU/KHOẢN: Chỉ ghi số Điều/Khoản khi đúng số đó xuất hiện nguyên văn trong ngữ cảnh của chính tài liệu được trích. Nếu ngữ cảnh không ghi số Điều/Khoản thì chỉ nêu tên tài liệu, tuyệt đối không tự đoán hay tự đánh số Điều/Khoản.
 - TRUNG THỰC & CHỐNG BỊA ĐẶT: Nếu ngữ cảnh không chứa câu trả lời hoặc không đủ thông tin, hãy trả lời trung thực rằng: "Tài liệu quy chế hiện tại chưa có thông tin cụ thể về vấn đề này. Bạn vui lòng liên hệ Phòng Đào tạo (ĐT: 024.38522201) hoặc Văn phòng Khoa để được giải đáp chính thức." Tuyệt đối không tự suy đoán thông tin học vụ quan trọng.
+- KHỚP ĐÚNG ĐỐI TƯỢNG HỎI: Nếu câu hỏi nêu một năm/mốc thời gian, bậc đào tạo (thạc sĩ, tiến sĩ...) hoặc đối tượng cụ thể mà ngữ cảnh không đề cập, hãy mở đầu bằng câu trả lời trung thực ở trên. Không trình bày số liệu của năm/bậc/đối tượng khác như thể đó là câu trả lời; nếu muốn tham khảo, chỉ nói ngắn gọn một câu rằng tài liệu hiện có số liệu của đối tượng nào.
 - ĐỊNH DẠNG:
   - Nếu ngữ cảnh có bảng số liệu, điểm chuẩn, biểu phí hoặc đối chiếu ngắn, hãy dùng bảng Markdown chuẩn.
   - Nếu nội dung có nhiều điều kiện hoặc bước thực hiện, dùng bullet list rõ ràng, rành mạch.
@@ -194,6 +197,38 @@ class RagPrompt:
     ctx_parts: list[str] = field(default_factory=list)
 
 
+_DIEU_IN_CONTEXT_RE = re.compile(r"\bĐiều\s+(\d+)", re.IGNORECASE)
+
+
+def _citation_rule(chunks: list) -> str:
+    """
+    Dòng hướng dẫn trích dẫn kèm danh sách số Điều có nguyên văn trong ngữ cảnh, theo từng tài liệu.
+    Model hay tự gán số Điều (vd 'Điều 14' khi quy định nằm ở Điều 13, hoặc 'Điều 3 của QuyDinhHocTap.txt'
+    vốn không chia Điều), nên chỉ cho phép trích các số có trong danh sách này.
+    """
+    by_doc: dict[str, set[int]] = {}
+    for c in chunks:
+        payload = c.payload or {}
+        doc = payload.get("doc_name", "")
+        nums = {int(n) for n in _DIEU_IN_CONTEXT_RE.findall(payload.get("content", ""))}
+        by_doc.setdefault(doc, set()).update(nums)
+
+    cited = {doc: nums for doc, nums in by_doc.items() if doc and nums}
+    if not cited:
+        return (
+            "- Ngữ cảnh không ghi số Điều/Khoản nào: chỉ nêu tên tài liệu nguồn, "
+            "KHÔNG ghi số Điều/Khoản.\n"
+        )
+    listing = "; ".join(
+        f"{doc}: " + ", ".join(f"Điều {n}" for n in sorted(nums)) for doc, nums in cited.items()
+    )
+    return (
+        "- Chỉ được ghi số Điều có trong danh sách sau (đúng tài liệu tương ứng): "
+        f"{listing}. Tài liệu không có trong danh sách thì chỉ nêu tên tài liệu, không ghi số Điều/Khoản. "
+        "Chỉ ghi số Khoản khi thấy nguyên văn trong ngữ cảnh.\n"
+    )
+
+
 def resolve_question(question: str, history: list[dict]) -> tuple[str, bool]:
     """Viết lại câu hỏi nối tiếp; trả (câu hỏi hiệu lực, có phải follow-up tự đủ — không cần RAG)."""
     effective_question = rewrite_followup_question(question, history)
@@ -264,6 +299,7 @@ async def build_rag_prompt(effective_question: str, *, retrieve: bool = True) ->
         return RagPrompt(prompt=effective_question, chunks=chunks, source_names=source_names)
 
     src_str = ", ".join(f"**{n}**" for n in source_names if n)
+    citation_rule = _citation_rule(chunks)
 
     if has_table_context or wants_table_answer(effective_question):
         extra_instruction = (
@@ -276,14 +312,14 @@ async def build_rag_prompt(effective_question: str, *, retrieve: bool = True) ->
             "- Nếu bảng trong ngữ cảnh đã rõ cột/hàng, hãy bám sát cấu trúc đó để trả lời.\n"
             "- Chỉ khi nội dung quá dài, ô quá dài hoặc bảng bị vỡ thì mới chuyển sang bullet list.\n"
             "- Không in đường dẫn ảnh, tên file ảnh hoặc URL nội bộ.\n"
-            "- Nêu rõ căn cứ Điều/Khoản trong quy chế nếu có trong ngữ cảnh.\n"
+            f"{citation_rule}"
         )
     else:
         extra_instruction = (
             "\n\nYÊU CẦU ĐỊNH DẠNG:\n"
             "- Ưu tiên bullet list ngắn gọn, rõ ràng, dễ đối chiếu.\n"
             "- Nếu các ý ngắn, đồng đều, dưới 10 dòng thì có thể dùng bảng Markdown.\n"
-            "- Nêu rõ căn cứ Điều/Khoản trong quy chế nếu có trong ngữ cảnh.\n"
+            f"{citation_rule}"
             "- Nếu thông tin không có trong tài liệu, trả lời trung thực rằng tài liệu hiện chưa đề cập.\n"
         )
 

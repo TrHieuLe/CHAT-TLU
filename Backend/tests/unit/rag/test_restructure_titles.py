@@ -311,3 +311,58 @@ class TestChunkByTitle:
         """Chấp nhận cả str lẫn Path."""
         result = chunk_by_title(str(tmp_text_file))
         assert result["title"] == "sample"
+
+
+class TestTxtTree:
+    """File .txt viết tay: mục IN HOA + bản ghi đánh số thành chunk riêng, mang đường dẫn tiêu đề."""
+
+    @pytest.fixture
+    def list_file(self, tmp_path):
+        f = tmp_path / "DiemChuan.txt"
+        f.write_text(
+            "TÊN VĂN BẢN: ĐIỂM CHUẨN CÁC NGÀNH\n"
+            "CHI TIẾT ĐIỂM CHUẨN TỪNG NGÀNH\n"
+            "1. Ngành Kỹ thuật cơ khí\n"
+            "- Điểm chuẩn thi trung học phổ thông: 22.60 điểm\n"
+            "2. Ngành Công nghệ thông tin\n"
+            "- Điểm chuẩn thi trung học phổ thông: 23.23 điểm\n"
+            "TỔNG HỢP\n"
+            "- Ngành có điểm chuẩn cao nhất: Luật kinh tế.\n",
+            encoding="utf-8",
+        )
+        return f
+
+    def test_tree_structure(self, list_file):
+        tree = chunk_by_title(list_file)
+        assert tree["title"] == "ĐIỂM CHUẨN CÁC NGÀNH"
+        sections = tree["children"]
+        assert [s["title"] for s in sections] == ["CHI TIẾT ĐIỂM CHUẨN TỪNG NGÀNH", "TỔNG HỢP"]
+        records = sections[0]["children"]
+        assert [r["title"] for r in records] == ["1. Ngành Kỹ thuật cơ khí", "2. Ngành Công nghệ thông tin"]
+        assert all(r["standalone"] for r in records)
+        assert "23.23" in records[1]["content"]
+
+    def test_one_chunk_per_record_with_header(self, list_file):
+        from app.rag.doc_preprocessor import chunk_doc
+        chunks = [c["text"] for c in chunk_doc(chunk_by_title(list_file), model="x")]
+        assert len(chunks) == 3
+        cntt = [c for c in chunks if "Công nghệ thông tin" in c]
+        assert len(cntt) == 1
+        assert cntt[0].startswith("ĐIỂM CHUẨN CÁC NGÀNH > CHI TIẾT ĐIỂM CHUẨN TỪNG NGÀNH > 2. Ngành Công nghệ thông tin")
+        assert "23.23" in cntt[0] and "22.60" not in cntt[0]
+
+    def test_first_line_title_before_numbered_list(self, tmp_path):
+        f = tmp_path / "DonVi.txt"
+        f.write_text("Các đơn vị - Trường Đại học Thủy lợi\n1. Phòng Đào tạo\nĐiện thoại: 0243\n", encoding="utf-8")
+        tree = chunk_by_title(f)
+        assert tree["title"] == "Các đơn vị - Trường Đại học Thủy lợi"
+        assert tree["content"] == ""
+        assert tree["children"][0]["title"] == "1. Phòng Đào tạo"
+
+    def test_plain_bullets_stay_flat(self, tmp_path):
+        f = tmp_path / "flat.txt"
+        f.write_text("- Ý thứ nhất.\n- Ý thứ hai.\n", encoding="utf-8")
+        tree = chunk_by_title(f)
+        assert tree["title"] == "flat"
+        assert tree["children"] == []
+        assert "Ý thứ hai" in tree["content"]

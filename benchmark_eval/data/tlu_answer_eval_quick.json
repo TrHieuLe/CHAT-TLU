@@ -1,0 +1,439 @@
+[
+ {
+  "id": 5,
+  "question": "in ra bảng Các cơ sở tổ chức cấp chứng chỉ tiếng Anh quốc tế được công nhận đi",
+  "ground_truth": [
+   "TATC.docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 8,
+  "question": "hocj phí trường là bao nhiêu",
+  "ground_truth": [
+   "HocPhi.txt",
+   "QĐ về Học phí final (25-10-2021).docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 15,
+  "question": "hãy in ảnh Các cơ sở tổ chức cấp chứng chỉ tiếng Anh quốc tế được công nhận",
+  "ground_truth": [
+   "TATC.docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 18,
+  "question": "Điều kiện tốt nghiệp gồm những gì?",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+   "QuyDinhHocTap.txt"
+  ],
+  "expect_refusal": false,
+  "key_facts": [
+   "Điểm trung bình chung tích lũy toàn khóa từ 2,00 (thang điểm 4) trở lên",
+   "Có chứng chỉ Giáo dục quốc phòng an ninh và hoàn thành học phần Giáo dục thể chất",
+   "Đạt chuẩn ngoại ngữ đầu ra theo quy định của Nhà trường",
+   "Đạt chuẩn công nghệ thông tin đầu ra (trừ nhóm ngành CNTT)"
+  ]
+ },
+ {
+  "id": 22,
+  "question": "tRƯỜNG có bao nhiêu cơ sở",
+  "ground_truth": [
+   "introduce.txt"
+  ],
+  "expect_refusal": false,
+  "key_facts": [
+   "Trụ sở chính tại 175 Tây Sơn, Đống Đa, Hà Nội",
+   "Cơ sở Phố Hiến (Hưng Yên)",
+   "Phân hiệu miền Nam",
+   "Viện miền Trung (Khánh Hòa)"
+  ]
+ },
+ {
+  "id": 24,
+  "question": "Tôi học ngành công nghệ thông tin và được học bổng loại giỏi với 20 tín chỉ thì tôi được bao nhiêu tiền",
+  "ground_truth": [
+   "QĐ ve HBKKHT, HBCS .docx",
+   "HocBong.txt",
+   "HocPhi.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 26,
+  "question": "Cho tôi 1 vài quy chế về điểm rèn luyện đi",
+  "ground_truth": [
+   "QĐ đánh giá KQRL .docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 28,
+  "question": "Chỉ tiêu của trường đại học thủy lợi",
+  "ground_truth": [
+   "ChiTieu.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 29,
+  "question": "Chỉ tiêu của trường đại học thủy lợi khoa công nghệ thông tin",
+  "ground_truth": [
+   "ChiTieu.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 35,
+  "question": "Cho tôi quy tắc cộng điểm rèn luyện của đại học thủy lợi",
+  "ground_truth": [
+   "QĐ đánh giá KQRL .docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 36,
+  "question": "Cho tôi quy chế tính điểm bằng chữ",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+   "QuyDinhHocTap.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 37,
+  "question": "Cho tôi chỉ tiêu tất cả các ngành của trường đại học thủy lợi đi",
+  "ground_truth": [
+   "ChiTieu.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 42,
+  "question": "điểm chuẩn ngành công nghệ thông tin là bao nhiêu điểm",
+  "ground_truth": [
+   "DiemChuan.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 55,
+  "question": "QUy đổi diểm tiếng anh quốc tế",
+  "ground_truth": [
+   "TA.docx",
+   "QĐ về tiếng anh CTTT.300921.QD.1315.docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 61,
+  "question": "Khoa nào là học phí rẻ nhất",
+  "ground_truth": [
+   "HocPhi.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 63,
+  "question": "Khối ngành KInh tế-quản lý có bao nhiêu ngành",
+  "ground_truth": [
+   "HocPhi.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 72,
+  "question": "Gpa hiện tại của tôi là 3.16 tôi đã học 120/140 tín thì tôi có khả năng được tốt nghiệp loại xuất sắc không",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+   "QuyDinhHocTap.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 76,
+  "question": "Hãy cho tôi điểm chuẩn ngành công nghệ thông tin đi",
+  "ground_truth": [
+   "DiemChuan.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 77,
+  "question": "Quy chế về điểm rèn luyện là như thế nào ?",
+  "ground_truth": [
+   "QĐ đánh giá KQRL .docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 87,
+  "question": "Điều kiện về điểm trung bình tích lũy để xét tốt nghiệp là bao nhiêu?",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+   "QuyDinhHocTap.txt"
+  ],
+  "expect_refusal": false,
+  "key_facts": [
+   "Điểm trung bình chung tích lũy toàn khóa từ 2,00 (thang điểm 4) trở lên"
+  ]
+ },
+ {
+  "id": 92,
+  "question": "Yêu cầu trình độ tiếng Anh khi kết thúc năm học thứ nhất của SV chương trình tiên tiến là gì?",
+  "ground_truth": [
+   "TA.docx",
+   "QĐ về tiếng anh CTTT.300921.QD.1315.docx"
+  ],
+  "expect_refusal": false,
+  "key_facts": [
+   "Kết thúc năm thứ nhất phải đạt IELTS từ 4.5 trở lên hoặc tương đương"
+  ]
+ },
+ {
+  "id": 96,
+  "question": "Học phần Giáo dục thể chất có tính vào điểm trung bình tích lũy không?",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+   "QD_1038_16.07.2021_GDTC.docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 98,
+  "question": "Có cần chứng chỉ Công nghệ thông tin để tốt nghiệp không?",
+  "ground_truth": [
+   "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+   "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 99,
+  "question": "Sinh viên có được học 3 chương trình cùng lúc không?",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 101,
+  "question": "Điểm chữ I là gì?",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+   "QuyDinhHocTap.txt"
+  ],
+  "expect_refusal": false,
+  "key_facts": [
+   "I là điểm chưa hoàn thiện",
+   "Do sinh viên được phép hoãn thi hoặc hoãn kiểm tra"
+  ]
+ },
+ {
+  "id": 103,
+  "question": "Học lực yếu có bị buộc thôi học không?",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+   "QuyDinhHocTap.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 116,
+  "question": "Sinh viên học văn bằng hai có được xét học bổng KKHT không?",
+  "ground_truth": [
+   "QĐ ve HBKKHT, HBCS .docx",
+   "HocBong.txt"
+  ],
+  "expect_refusal": false,
+  "key_facts": [
+   "Không được xét học bổng KKHT",
+   "Học bổng KKHT chỉ dành cho sinh viên học ngành đào tạo thứ nhất"
+  ]
+ },
+ {
+  "id": 120,
+  "question": "Các môn học nào không được tính vào điểm trung bình để xét khen thưởng?",
+  "ground_truth": [
+   "QĐ Khen thưởng - KL .docx"
+  ],
+  "expect_refusal": false,
+  "key_facts": [
+   "Không tính Giáo dục thể chất",
+   "Không tính Giáo dục quốc phòng",
+   "Không tính môn văn bằng 2 và môn học được bảo lưu"
+  ]
+ },
+ {
+  "id": 127,
+  "question": "vậy phải làm sao thì mới bị buộc thôi học",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+   "QĐ Khen thưởng - KL .docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 145,
+  "question": "Điểm chuẩn của trường là bao nhiêu?",
+  "ground_truth": [
+   "DiemChuan.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 146,
+  "question": "Cho tôi điểm chuẩn của khoa công nghệ thông tin đi",
+  "ground_truth": [
+   "DiemChuan.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 152,
+  "question": "Quy chế thi lại, học lại như thế nào?",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+   "QuyDinhHocTap.txt",
+   "DangKyTinChi.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 153,
+  "question": "Cho tôi điểm chuẩn khoa kinh tế đi",
+  "ground_truth": [
+   "DiemChuan.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 154,
+  "question": "Hướng dẫn cách kết nối Wifi của trường?",
+  "ground_truth": [
+   "Wifi.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 155,
+  "question": "Cho tôi điểm đầu vào của khoa công nghệ thông tin đi",
+  "ground_truth": [
+   "DiemChuan.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 157,
+  "question": "sinh viên sẽ bị hạ bằng khi nào",
+  "ground_truth": [
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx",
+   "QuyDinhHocTap.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 163,
+  "question": "TRường có những thành tựu nào",
+  "ground_truth": [
+   "introduce.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 175,
+  "question": "Chuẩn đầu ra Tiếng Anh quy định như thế nào?",
+  "ground_truth": [
+   "TA.docx",
+   "QĐ về tiếng anh CTTT.300921.QD.1315.docx",
+   "TATC.docx",
+   "QĐ-1226-Quy che dao tao dai hoc-DHTL .docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 186,
+  "question": "sinh viên chất lượng tiên tiến không được xét hocj bổng à",
+  "ground_truth": [
+   "QĐ ve HBKKHT, HBCS .docx",
+   "HocBong.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 191,
+  "question": "hãy cho tôi điểm đầu vào của khoa công nghệ thông tin đi",
+  "ground_truth": [
+   "DiemChuan.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 197,
+  "question": "Ngành nào có điểm đầu vào cao nhất khoa kinh tế",
+  "ground_truth": [
+   "DiemChuan.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 198,
+  "question": "quy đổi điểm tiếng anh quốc tế",
+  "ground_truth": [
+   "TA.docx",
+   "QĐ về tiếng anh CTTT.300921.QD.1315.docx"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 199,
+  "question": "Miễn học, miễn thi và công nhận điểm đối với học phần Tin học cơ bản",
+  "ground_truth": [
+   "QuyDinh_Ve_CDR_CNTT_Ban_hanh_theo_QD411-06-4-2022.pdf",
+   "QD411_QD_DHTL-Chuan_Dau_Ra_CNTT.pdf"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 221,
+  "question": "cho tôi thông tin về trường",
+  "ground_truth": [
+   "introduce.txt"
+  ],
+  "expect_refusal": false
+ },
+ {
+  "id": 1001,
+  "question": "Lương trung bình của giảng viên Trường Đại học Thủy Lợi là bao nhiêu?",
+  "ground_truth": [],
+  "expect_refusal": true
+ },
+ {
+  "id": 1005,
+  "question": "Điểm chuẩn ngành Công nghệ thông tin năm 2035 là bao nhiêu?",
+  "ground_truth": [],
+  "expect_refusal": true
+ },
+ {
+  "id": 1014,
+  "question": "Điểm sàn xét tuyển thạc sĩ ngành Kỹ thuật phần mềm là bao nhiêu?",
+  "ground_truth": [],
+  "expect_refusal": true
+ },
+ {
+  "id": 1015,
+  "question": "Học phí chương trình thạc sĩ ngành Kinh tế là bao nhiêu một năm?",
+  "ground_truth": [],
+  "expect_refusal": true
+ },
+ {
+  "id": 1019,
+  "question": "Cho tôi số điện thoại cá nhân của trưởng khoa Công nghệ thông tin",
+  "ground_truth": [],
+  "expect_refusal": true
+ }
+]

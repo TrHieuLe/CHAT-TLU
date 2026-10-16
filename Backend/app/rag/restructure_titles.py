@@ -289,6 +289,91 @@ def _flat_txt_fallback(file_path: Path) -> dict:
         "pages": [1],
     }
 
+
+_TXT_DOC_TITLE_RE = re.compile(r"^TÊN VĂN BẢN\s*:\s*(.+)$", flags=re.IGNORECASE)
+_TXT_RECORD_RE = re.compile(r"^\d+\.\s+\S")
+_TXT_RULE_RE = re.compile(r"^[-=_*]{5,}$")
+# Dòng đánh dấu phần trong file dạng gạch đầu dòng, vd '- Phần 9 của văn bản quy định về xếp loại tốt nghiệp.'
+_TXT_PART_RE = re.compile(r"^-?\s*Phần\s+\d+\s+của văn bản\b", flags=re.IGNORECASE)
+
+
+def _txt_is_section(line: str) -> bool:
+    """Dòng IN HOA ngắn (vd 'THÔNG TIN CHI TIẾT TỪNG NGÀNH', 'I. LỊCH SỬ ...') là tiêu đề mục."""
+    if len(line) <= 150 and _TXT_PART_RE.match(line):
+        return True
+    if len(line) > 150 or line.startswith(("-", "+", "*")):
+        return False
+    letters = [c for c in line if c.isalpha()]
+    return len(letters) >= 3 and all(c.isupper() for c in letters)
+
+
+def _txt_is_record(line: str) -> bool:
+    """Dòng '6. Ngành Công nghệ thông tin' mở đầu một bản ghi trong danh sách đánh số."""
+    return len(line) <= 160 and bool(_TXT_RECORD_RE.match(line))
+
+
+def _txt_tree(file_path: Path) -> dict:
+    """
+    Dựng cây cho file .txt viết tay: dòng IN HOA là mục (cấp 1), dòng đánh số '1. ...' là bản ghi (cấp 2).
+    Mỗi mục/bản ghi đánh dấu standalone để chunk_doc tách thành chunk riêng, mang theo đường dẫn tiêu đề
+    (vd 'ĐIỂM CHUẨN ... > CHI TIẾT ... > 6. Ngành Công nghệ thông tin'). Trước đây cả file là một nút,
+    nên một chunk ~800 token gộp hơn chục ngành và câu hỏi về một ngành không khớp được chunk nào.
+    Tiêu đề tài liệu lấy từ dòng 'TÊN VĂN BẢN: ...' đầu file, hoặc dòng ngắn đầu tiên nếu ngay sau nó
+    là một mục/bản ghi. File không có tiêu đề nào giữ nguyên cách cũ (một nút).
+    """
+    lines = [ln.strip() for ln in file_path.read_text(encoding="utf-8").splitlines()]
+    lines = [ln for ln in lines if ln and not _TXT_RULE_RE.match(ln)]
+    if not lines:
+        return _flat_txt_fallback(file_path)
+
+    title = file_path.stem
+    m = _TXT_DOC_TITLE_RE.match(lines[0])
+    if m:
+        title = m.group(1).strip()
+        lines = lines[1:]
+    elif (
+        len(lines) > 1
+        and len(lines[0]) <= 150
+        and not lines[0].startswith(("-", "+", "*"))
+        and not _txt_is_record(lines[0])
+        and (_txt_is_section(lines[1]) or _txt_is_record(lines[1]))
+    ):
+        title = lines[0]
+        lines = lines[1:]
+
+    if not any(_txt_is_section(ln) or _txt_is_record(ln) for ln in lines):
+        flat = _flat_txt_fallback(file_path)
+        flat["title"] = title
+        flat["content"] = "\n".join(lines)
+        return flat
+
+    root = {
+        "titleId": _make_title_id(title, 1),
+        "title": title,
+        "content": "",
+        "page_number": 1,
+        "children": [],
+        "pages": [1],
+    }
+    section: dict | None = None
+    current = root
+
+    for line in lines:
+        if _txt_is_section(line):
+            section = _new_node(line.lstrip("-* ").rstrip("."), 1)
+            section["standalone"] = True
+            root["children"].append(section)
+            current = section
+        elif _txt_is_record(line):
+            record = _new_node(line, 1)
+            record["standalone"] = True
+            (section or root)["children"].append(record)
+            current = record
+        else:
+            current["content"] = f"{current['content']}\n{line}" if current["content"] else line
+
+    return root
+
 #Tạo nút rỗng
 def _new_node(title: str, page_number: int) -> dict:
     return {
@@ -426,7 +511,7 @@ def chunk_by_title(file_path: str | Path) -> dict:
         )
 
     if file_ext == ".txt":
-        return _flat_txt_fallback(file_path)
+        return _txt_tree(file_path)
 
     elements = _partition_file(file_path)
 

@@ -145,3 +145,34 @@ class TestRetrieverRetrieveV3:
             await r.retrieve_v3("test", bot_id=5)
             call_kwargs = mock_async.query_points.call_args
             assert call_kwargs is not None
+
+
+class TestRollup:
+    """Câu hỏi bao quát danh sách: top-k toàn bản ghi lẻ của một tài liệu → thêm mục TỔNG HỢP."""
+
+    @staticmethod
+    def _pt(pid, doc, header):
+        p = MagicMock()
+        p.id = pid
+        p.payload = {"doc_name": doc, "content": f"{header}\n- nội dung"}
+        return p
+
+    def test_rollup_doc_needs_three_records(self):
+        from app.rag.retriever import _rollup_doc
+        recs = [self._pt(i, "DiemChuan.txt", f"ĐIỂM CHUẨN > CHI TIẾT > {i}. Ngành X{i}.") for i in range(1, 4)]
+        other = self._pt(9, "QĐ.docx", "QĐ > Điều 3. Phạm vi")
+        assert _rollup_doc(recs + [other]) == "DiemChuan.txt"
+        assert _rollup_doc(recs[:2] + [other]) is None
+
+    def test_merge_keeps_best_record_first(self):
+        from app.rag.retriever import merge_rollup
+        recs = [self._pt(i, "D.txt", f"D > M > {i}. Ngành {i}.") for i in range(1, 5)]
+        summary = self._pt("s", "D.txt", "D > TỔNG HỢP TẤT CẢ CÁC NGÀNH.")
+        out = merge_rollup(recs, [summary], top_k=4)
+        assert [p.id for p in out] == [1, "s", 2, 3]
+
+    def test_merge_skips_summary_already_present(self):
+        from app.rag.retriever import merge_rollup
+        summary = self._pt("s", "D.txt", "D > TỔNG HỢP.")
+        recs = [summary] + [self._pt(i, "D.txt", f"D > M > {i}. Ngành {i}.") for i in range(1, 4)]
+        assert merge_rollup(recs, [summary], top_k=4) == recs
