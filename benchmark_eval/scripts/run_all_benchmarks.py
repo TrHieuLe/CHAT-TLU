@@ -81,6 +81,7 @@ def generate_markdown_summary():
 ```
 
 ### Phân tích số liệu Bảng 4.3:
+- ⚠ Bảng này là MÔ PHỎNG (vector ngẫu nhiên, độ trễ pipeline sinh bằng `random.uniform`), chưa đo trên hệ thống thật.
 - Ngưỡng Cosine Similarity $\ge 0.94$ kết hợp bảng băm Exact Match giúp giải quyết **43.6%** các câu hỏi lặp lại trong mùa thi/mùa học bổng với độ trễ tức thì (< 5ms), tiết kiệm chi phí gọi API Google Gemini tương ứng 43.6%.
 
 ---
@@ -92,8 +93,9 @@ def generate_markdown_summary():
 ```
 
 ### Phân tích số liệu Bảng 4.4:
-- Khi không có RAG, mô hình Gemini thuần bị ảo giác nghiêm trọng với các quy định riêng của Trường ĐH Thủy Lợi (Faithfulness chỉ đạt **0.42**).
-- Với StudyBot Pipeline, chỉ số trung thực đạt **0.98** và tỷ lệ trích dẫn chính xác Điều/Khoản/Quyết định đạt **98.4%**.
+- Số liệu đo thật bởi `Backend/scripts/eval_answers.py`: Gemini trả lời thật trên Qdrant thật, một model Gemini mạnh hơn chấm điểm.
+  Chi tiết từng câu và 10 câu điểm thấp nhất: `benchmark_eval/results/answer_eval_tlu_answer_eval.md`.
+- Độ tin cậy của judge (đồng thuận với người chấm, Cohen's kappa) xem bằng `eval_answers.py --calibrate`.
 
 ---
 *Các file log chi tiết từng query được lưu tại thư mục: `benchmark_eval/logs/`*

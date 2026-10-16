@@ -78,27 +78,34 @@
 
 ---
 
-## 4. Bảng 4.4: Đánh Giá Chất Lượng RAG Theo Chuẩn RAG Triad
+## 4. Bảng 4.4: Chất Lượng Câu Trả Lời (RAG Triad) — ĐO THẬT
 
-```text
-🏆 BẢNG KẾT QUẢ ĐÁNH GIÁ RAG TRIAD (BẢNG 4.4):
-==========================================================================================
-| Chỉ số Đánh giá                    | LLM thuần (Không RAG)    | RAG Naive (Dense)    | StudyBot TLU     |
-|------------------------------------|--------------------------|----------------------|------------------|
-| Faithfulness (Tính trung thực)     |                   0.40 |               0.74 |           0.99 |
-| Answer Relevance (Đúng trọng tâm)  |                   0.67 |               0.78 |           0.97 |
-| Context Relevance (Ngữ cảnh sạch)  |                    N/A |               0.69 |           0.96 |
-| Tỷ lệ trích dẫn đúng Điều/Khoản    |                  14.8% |              57.2% |          98.7% |
-|------------------------------------|--------------------------|----------------------|------------------|
+*Đo lúc 2026-10-16 12:43:30 bởi `Backend/scripts/eval_answers.py` trên 145 câu (`tlu_answer_eval.json`: 120 câu trả lời được, trong đó 39 câu có đáp án chuẩn; 25 câu tài liệu không có).
+Model trả lời `gemini-flash-lite-latest` (temperature 0.7, top-k 8, reranker tắt); judge `gemini-flash-latest`.
+Số trong ngoặc vuông là khoảng tin cậy 95% (bootstrap); n là số câu tính chỉ số.*
 
-📌 Nhận xét học thuật:
-1. LLM thuần (Gemini 2.5 Flash không RAG) bị ảo giác nghiêm trọng (Faithfulness chỉ đạt 0.42) do không nắm được các văn bản quy chế nội bộ của Trường ĐH Thủy Lợi.
-2. StudyBot TLU nâng chỉ số trung thực lên 0.98 và tỷ lệ trích dẫn Điều/Khoản lên 98.4%, loại bỏ gần như triệt để rủi ro hallucination.
-```
+> Thay cho bảng cũ: số liệu trước đây (Faithfulness 0.99, trích dẫn 98.7%, cột "RAG Naive") được **sinh ngẫu nhiên bằng `np.random.beta`**, không phải số đo, nên đã bị loại bỏ.
+
+| Chỉ số | LLM thuần (không RAG) | StudyBot |
+|---|---|---|
+| Faithfulness (khẳng định có căn cứ trong tài liệu) | 0.21 [0.17–0.26] (n=136) | 0.97 [0.95–0.99] (n=113) |
+| Answer Relevance (đúng trọng tâm) | 0.57 [0.51–0.63] (n=120) | 0.85 [0.80–0.90] (n=120) |
+| Context Relevance (ngữ cảnh đủ để trả lời) | N/A | 0.78 [0.71–0.86] (n=120) |
+| Correctness (tỷ lệ ý bắt buộc nêu đúng) | 0.43 [0.29–0.58] (n=39) | 0.98 [0.94–1.00] (n=39) |
+| Tỷ lệ câu nêu SAI ý bắt buộc | 46.2% [31–62] (n=39) | 0.0% [0–0] (n=39) |
+| Từ chối đúng khi tài liệu không có | 28.0% [12–48] (n=25) | 100.0% [100–100] (n=25) |
+| Từ chối sai khi tài liệu có | 1.1% [0–3] (n=89) | 0.0% [0–0] (n=94) |
+| Tỷ lệ có trích dẫn Điều/Khoản | 0.8% [0–3] (n=118) | 46.0% [37–55] (n=113) |
+| Tỷ lệ trích dẫn Điều không có trong tài liệu | 100.0% [100–100] (n=1) | 6.2% [0–15] (n=48) |
 
 ### Phân tích số liệu Bảng 4.4:
-- Khi không có RAG, mô hình Gemini thuần bị ảo giác nghiêm trọng với các quy định riêng của Trường ĐH Thủy Lợi (Faithfulness chỉ đạt **0.42**).
-- Với StudyBot Pipeline, chỉ số trung thực đạt **0.98** và tỷ lệ trích dẫn chính xác Điều/Khoản/Quyết định đạt **98.4%**.
+- **Khi tìm được tài liệu, câu trả lời bám tài liệu rất sát**: 97% khẳng định có căn cứ trong ngữ cảnh; với 39 câu có đáp án chuẩn, StudyBot nêu đúng 98% ý bắt buộc và không nêu sai ý nào. LLM thuần chỉ đúng 43% và nêu sai ý bắt buộc ở 46% số câu.
+- **Biết từ chối**: StudyBot từ chối đúng 25/25 câu tài liệu không có và không từ chối sai câu nào khi ngữ cảnh đủ. LLM thuần chỉ từ chối 28%, còn lại tự bịa câu trả lời cụ thể (vd phí gửi xe "50.000 đồng/tháng", "trường có bể bơi", một mã số thuế).
+- **Điểm yếu chính nằm ở truy xuất**: chỉ 78% câu có ngữ cảnh đủ để trả lời. Lỗi lặp lại: câu hỏi điểm chuẩn/điểm đầu vào ngành CNTT kéo về văn bản *Chuẩn đầu ra CNTT* thay vì `DiemChuan.txt` (trùng từ "công nghệ thông tin"). Khi thiếu ngữ cảnh StudyBot từ chối hoặc trả lời lệch trọng tâm — nguyên nhân chính khiến Answer Relevance chỉ đạt 0.85.
+- **Trích dẫn**: 46% câu trả lời có nêu Điều/Khoản. Phần lớn khẳng định bị judge đánh "không có căn cứ" là **số Điều/Khoản sai** (vd ghi "Điều 14" trong khi quy định nằm ở Điều 13) — 6% câu trích số Điều không xuất hiện trong ngữ cảnh.
+- **Hiệu chỉnh judge** (`eval_answers.py --calibrate`, 30 mẫu ngẫu nhiên seed 42 — 12 StudyBot, 18 LLM thuần; nhãn trong `benchmark_eval/data/judge_calibration_tlu_answer_eval.csv`):
+  Faithful đồng thuận 28/28 (κ = 1.00); Refused đồng thuận 29/30 (κ = 0.65 — κ thấp do chỉ 2 mẫu từ chối, mẫu lệch là id 1015 trả lời vòng vo không đưa con số).
+  ⚠ Nhãn đối chiếu do **Claude Opus 5.5 chấm, không phải người**; hai model khác họ nên không trùng thiên lệch, nhưng trước khi đưa vào báo cáo chính thức nên có người chấm lại ít nhất một phần. 18/30 mẫu là LLM thuần (dễ phân biệt), nên đồng thuận trên riêng các mẫu StudyBot mới là phép thử khó (Faithful 11/11, Refused 12/12 khớp).
 
 ---
 *Các file log chi tiết từng query được lưu tại thư mục: `benchmark_eval/logs/`*

@@ -13,6 +13,7 @@ import asyncio
 import json
 import logging
 import uuid
+from dataclasses import dataclass, field
 from io import BytesIO
 from pathlib import Path
 from typing import AsyncGenerator
@@ -183,6 +184,118 @@ async def _update_memories_background(user_id: str, text: str) -> None:
         logger.warning("Cập nhật memory thất bại: %s", e)
 
 
+# ─── Dựng prompt RAG (dùng chung cho route chat và script đánh giá) ──────────
+
+@dataclass
+class RagPrompt:
+    prompt: str
+    chunks: list = field(default_factory=list)
+    source_names: list[str] = field(default_factory=list)
+    ctx_parts: list[str] = field(default_factory=list)
+
+
+def resolve_question(question: str, history: list[dict]) -> tuple[str, bool]:
+    """Viết lại câu hỏi nối tiếp; trả (câu hỏi hiệu lực, có phải follow-up tự đủ — không cần RAG)."""
+    effective_question = rewrite_followup_question(question, history)
+    is_self_contained_followup = (
+        is_reference_followup(question)
+        and effective_question != question
+        and extract_referenced_item(question, last_meaningful_model_answer(history)) != ""
+    )
+    return effective_question, is_self_contained_followup
+
+
+async def build_rag_prompt(effective_question: str, *, retrieve: bool = True) -> RagPrompt:
+    """Truy xuất tài liệu và dựng prompt gửi LLM. Không ghi DB, không đụng cache."""
+    chunks: list = []
+    if retrieve:
+        # Mở rộng từ viết tắt học vụ ĐH Thủy Lợi (TLU Abbreviation Expansion)
+        enhanced_question = enhance_query(effective_question)
+        try:
+            chunks = await _retriever.retrieve_v3(enhanced_question, bot_id=0)
+            if not isinstance(chunks, list):
+                chunks = list(chunks)
+        except Exception as e:
+            logger.error("Qdrant error: %s", e)
+            chunks = []
+
+        # Lọc bỏ các chunk có điểm rerank quá thấp nếu có
+        min_threshold = getattr(settings, "MIN_RELEVANCE_SCORE", 0.15)
+        valid_chunks = [
+            c for c in chunks
+            if not (c.payload and "rerank_score" in c.payload and c.payload["rerank_score"] < min_threshold)
+        ]
+        if valid_chunks:
+            chunks = valid_chunks
+
+    source_names = list({
+        c.payload.get("doc_name", "")
+        for c in chunks
+        if c.payload
+        and c.payload.get("doc_name")
+        and _is_reference_source_name(c.payload.get("doc_name", ""))
+    })
+
+    has_table_context = any(
+        bool((c.payload or {}).get("is_table", False))
+        for c in chunks
+    )
+
+    ctx_parts = []
+    for i, c in enumerate(chunks, 1):
+        payload = c.payload or {}
+        content = payload.get("content", "")
+        doc_name = payload.get("doc_name", "")
+        updated = payload.get("created_at", "")
+        img_descs = payload.get("image_descs", []) or []
+        is_table = bool(payload.get("is_table", False))
+
+        label = "BẢNG" if is_table else "CONTEXT"
+        ctx_text = f"[{label} {i}] Nguồn: {doc_name} | Cập nhật: {updated}\n{content}"
+
+        if img_descs:
+            desc_lines = [f"[HÌNH ẢNH] {desc}" for desc in img_descs if desc]
+            if desc_lines:
+                ctx_text += "\n" + "\n".join(desc_lines)
+
+        ctx_parts.append(ctx_text)
+
+    if not ctx_parts:
+        return RagPrompt(prompt=effective_question, chunks=chunks, source_names=source_names)
+
+    src_str = ", ".join(f"**{n}**" for n in source_names if n)
+
+    if has_table_context or wants_table_answer(effective_question):
+        extra_instruction = (
+            "\n\nYÊU CẦU ĐỊNH DẠNG:\n"
+            "- Nếu trong ngữ cảnh có bảng, hãy ưu tiên giữ nguyên thông tin dưới dạng bảng Markdown chuẩn.\n"
+            "- Nếu dữ liệu ngắn, đồng đều, dễ đối chiếu, hãy ưu tiên bảng Markdown.\n"
+            "- Nếu số ý ít và mỗi ý ngắn, có thể trình bày thành bảng 2 hoặc 3 cột.\n"
+            "- Không gộp cả đoạn văn dài vào một ô.\n"
+            "- Nếu có cột STT thì giữ cột STT.\n"
+            "- Nếu bảng trong ngữ cảnh đã rõ cột/hàng, hãy bám sát cấu trúc đó để trả lời.\n"
+            "- Chỉ khi nội dung quá dài, ô quá dài hoặc bảng bị vỡ thì mới chuyển sang bullet list.\n"
+            "- Không in đường dẫn ảnh, tên file ảnh hoặc URL nội bộ.\n"
+            "- Nêu rõ căn cứ Điều/Khoản trong quy chế nếu có trong ngữ cảnh.\n"
+        )
+    else:
+        extra_instruction = (
+            "\n\nYÊU CẦU ĐỊNH DẠNG:\n"
+            "- Ưu tiên bullet list ngắn gọn, rõ ràng, dễ đối chiếu.\n"
+            "- Nếu các ý ngắn, đồng đều, dưới 10 dòng thì có thể dùng bảng Markdown.\n"
+            "- Nêu rõ căn cứ Điều/Khoản trong quy chế nếu có trong ngữ cảnh.\n"
+            "- Nếu thông tin không có trong tài liệu, trả lời trung thực rằng tài liệu hiện chưa đề cập.\n"
+        )
+
+    prompt = (
+        f"Tài liệu tham khảo: {src_str}\n\n"
+        f"{'---'.join(ctx_parts)}\n\n"
+        f"Câu hỏi: {effective_question}"
+        f"{extra_instruction}"
+    )
+    return RagPrompt(prompt=prompt, chunks=chunks, source_names=source_names, ctx_parts=ctx_parts)
+
+
 # ─── RAG Streaming ───────────────────────────────────────────────────────────
 
 async def _stream_text_answer(
@@ -273,107 +386,15 @@ async def _stream_text_answer(
                     yield "data: [DONE]\n\n"
                     return
 
-            effective_question = rewrite_followup_question(question, history)
-            # Mở rộng từ viết tắt học vụ ĐH Thủy Lợi (TLU Abbreviation Expansion)
-            enhanced_question = enhance_query(effective_question)
-
-            is_self_contained_followup = (
-                is_reference_followup(question)
-                and effective_question != question
-                and extract_referenced_item(question, last_meaningful_model_answer(history)) != ""
-            )
+            effective_question, is_self_contained_followup = resolve_question(question, history)
             timer.tags["path"] = "followup" if is_self_contained_followup else "rag"
 
             if is_self_contained_followup:
-                chunks = []
-                source_names = []
-                ctx_parts = []
-                has_table_context = False
                 logger.info("Follow-up self-contained — skipping RAG retrieval")
             else:
                 yield "data: [STATUS]Đang tìm kiếm tài liệu quy chế...\n\n"
-                try:
-                    chunks = await _retriever.retrieve_v3(enhanced_question, bot_id=0)
-                    if not isinstance(chunks, list):
-                        chunks = list(chunks)
-                except Exception as e:
-                    logger.error("Qdrant error: %s", e)
-                    chunks = []
-
-                # Lọc bỏ các chunk có điểm rerank quá thấp nếu có
-                min_threshold = getattr(settings, "MIN_RELEVANCE_SCORE", 0.15)
-                valid_chunks = [
-                    c for c in chunks
-                    if not (c.payload and "rerank_score" in c.payload and c.payload["rerank_score"] < min_threshold)
-                ]
-                if valid_chunks:
-                    chunks = valid_chunks
-
-                source_names = list({
-                    c.payload.get("doc_name", "")
-                    for c in chunks
-                    if c.payload
-                    and c.payload.get("doc_name")
-                    and _is_reference_source_name(c.payload.get("doc_name", ""))
-                })
-
-                has_table_context = any(
-                    bool((c.payload or {}).get("is_table", False))
-                    for c in chunks
-                )
-
-                ctx_parts = []
-                for i, c in enumerate(chunks, 1):
-                    payload = c.payload or {}
-                    content = payload.get("content", "")
-                    doc_name = payload.get("doc_name", "")
-                    updated = payload.get("created_at", "")
-                    img_descs = payload.get("image_descs", []) or []
-                    is_table = bool(payload.get("is_table", False))
-
-                    label = "BẢNG" if is_table else "CONTEXT"
-                    ctx_text = f"[{label} {i}] Nguồn: {doc_name} | Cập nhật: {updated}\n{content}"
-
-                    if img_descs:
-                        desc_lines = [f"[HÌNH ẢNH] {desc}" for desc in img_descs if desc]
-                        if desc_lines:
-                            ctx_text += "\n" + "\n".join(desc_lines)
-
-                    ctx_parts.append(ctx_text)
-
-            if ctx_parts:
-                src_str = ", ".join(f"**{n}**" for n in source_names if n)
-
-                if has_table_context or wants_table_answer(effective_question):
-                    extra_instruction = (
-                        "\n\nYÊU CẦU ĐỊNH DẠNG:\n"
-                        "- Nếu trong ngữ cảnh có bảng, hãy ưu tiên giữ nguyên thông tin dưới dạng bảng Markdown chuẩn.\n"
-                        "- Nếu dữ liệu ngắn, đồng đều, dễ đối chiếu, hãy ưu tiên bảng Markdown.\n"
-                        "- Nếu số ý ít và mỗi ý ngắn, có thể trình bày thành bảng 2 hoặc 3 cột.\n"
-                        "- Không gộp cả đoạn văn dài vào một ô.\n"
-                        "- Nếu có cột STT thì giữ cột STT.\n"
-                        "- Nếu bảng trong ngữ cảnh đã rõ cột/hàng, hãy bám sát cấu trúc đó để trả lời.\n"
-                        "- Chỉ khi nội dung quá dài, ô quá dài hoặc bảng bị vỡ thì mới chuyển sang bullet list.\n"
-                        "- Không in đường dẫn ảnh, tên file ảnh hoặc URL nội bộ.\n"
-                        "- Nêu rõ căn cứ Điều/Khoản trong quy chế nếu có trong ngữ cảnh.\n"
-                    )
-                else:
-                    extra_instruction = (
-                        "\n\nYÊU CẦU ĐỊNH DẠNG:\n"
-                        "- Ưu tiên bullet list ngắn gọn, rõ ràng, dễ đối chiếu.\n"
-                        "- Nếu các ý ngắn, đồng đều, dưới 10 dòng thì có thể dùng bảng Markdown.\n"
-                        "- Nêu rõ căn cứ Điều/Khoản trong quy chế nếu có trong ngữ cảnh.\n"
-                        "- Nếu thông tin không có trong tài liệu, trả lời trung thực rằng tài liệu hiện chưa đề cập.\n"
-                    )
-
-                prompt = (
-                    f"Tài liệu tham khảo: {src_str}\n\n"
-                    f"{'---'.join(ctx_parts)}\n\n"
-                    f"Câu hỏi: {effective_question}"
-                    f"{extra_instruction}"
-                )
-            else:
-                prompt = effective_question
+            rag = await build_rag_prompt(effective_question, retrieve=not is_self_contained_followup)
+            source_names, ctx_parts, prompt = rag.source_names, rag.ctx_parts, rag.prompt
 
             db.add(ChatMessage(session_id=session_id, role="user", content=question))
             await db.commit()

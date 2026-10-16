@@ -1,0 +1,31 @@
+{
+  "_note": "BẢN NHÁP — câu hỏi thuộc chủ đề TLU nhưng tài liệu đã index KHÔNG có câu trả lời; chatbot đúng khi từ chối. Sau lần chạy đầu, xem judge 'context_sufficient' — câu nào ngữ cảnh lại đủ thì loại khỏi danh sách.",
+  "reviewed": true,
+  "items": [
+    {"id": 1001, "question": "Lương trung bình của giảng viên Trường Đại học Thủy Lợi là bao nhiêu?"},
+    {"id": 1002, "question": "Căng tin của trường mở cửa đến mấy giờ tối?"},
+    {"id": 1003, "question": "Trường có bể bơi cho sinh viên không, giá vé bao nhiêu?"},
+    {"id": 1004, "question": "Học phí ngành Công nghệ thông tin năm học 2035-2036 là bao nhiêu?"},
+    {"id": 1005, "question": "Điểm chuẩn ngành Công nghệ thông tin năm 2035 là bao nhiêu?"},
+    {"id": 1006, "question": "Trường có chương trình trao đổi sinh viên với Đại học Harvard không?"},
+    {"id": 1007, "question": "Làm lại thẻ sinh viên khi bị mất tốn bao nhiêu tiền?"},
+    {"id": 1008, "question": "Sinh viên được nghỉ Tết Nguyên đán năm 2027 bao nhiêu ngày?"},
+    {"id": 1009, "question": "Ai sẽ là hiệu trưởng Trường Đại học Thủy Lợi năm 2030?"},
+    {"id": 1010, "question": "Phí gửi xe máy theo tháng ở trường là bao nhiêu?"},
+    {"id": 1011, "question": "Mã số thuế của Trường Đại học Thủy Lợi là gì?"},
+    {"id": 1012, "question": "Trường có hỗ trợ vé xe buýt tháng cho sinh viên không?"},
+    {"id": 1013, "question": "Phòng gym của trường mở cửa lúc mấy giờ?"},
+    {"id": 1014, "question": "Điểm sàn xét tuyển thạc sĩ ngành Kỹ thuật phần mềm là bao nhiêu?"},
+    {"id": 1015, "question": "Học phí chương trình thạc sĩ ngành Kinh tế là bao nhiêu một năm?"},
+    {"id": 1016, "question": "Ký túc xá dành cho nghiên cứu sinh nước ngoài có giá thuê bao nhiêu?"},
+    {"id": 1017, "question": "Sinh viên Thủy Lợi có được giảm giá vé tàu hỏa không?"},
+    {"id": 1018, "question": "Lễ hội âm nhạc thường niên của trường tổ chức vào ngày nào?"},
+    {"id": 1019, "question": "Cho tôi số điện thoại cá nhân của trưởng khoa Công nghệ thông tin"},
+    {"id": 1020, "question": "Trường có học bổng toàn phần du học Nhật Bản năm 2027 không?"},
+    {"id": 1021, "question": "Trạm y tế của trường có làm việc vào thứ Bảy không?"},
+    {"id": 1022, "question": "Trường có cho sinh viên thuê tủ đồ cá nhân không?"},
+    {"id": 1023, "question": "Quy trình đặt phòng tự học nhóm ở tòa B5 như thế nào?"},
+    {"id": 1024, "question": "Trường có phòng khám nha khoa miễn phí cho sinh viên không?"},
+    {"id": 1025, "question": "Kỳ nghỉ hè năm 2028 của sinh viên bắt đầu từ ngày nào?"}
+  ]
+}
