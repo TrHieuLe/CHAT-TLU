@@ -225,12 +225,25 @@ async def get_document_stats(db: AsyncSession = Depends(get_db)):
             func.coalesce(func.sum(Document.chunk_count), 0),
         )
     )
-    total_docs, total_chunks = res.first() or (0, 0)
+    total_docs, db_chunks = res.first() or (0, 0)
+
+    # Số chunk thật nằm trong Qdrant: tài liệu nạp bằng ingest.py / đồng bộ local
+    # không cập nhật cột Document.chunk_count, nên tổng trong DB thấp hơn thực tế.
+    try:
+        info = await _async.get_collection(settings.QDRANT_COLLECTION)
+        total_chunks = int(info.points_count or 0)
+        chunk_source = "qdrant"
+    except Exception as e:
+        logger.warning("Không đọc được số chunk từ Qdrant, dùng số trong DB: %s", e)
+        total_chunks = int(db_chunks or 0)
+        chunk_source = "database"
 
     return {
         "total_documents": total_docs,
         "total_chunks": total_chunks,
-        "collection_name": settings.COLLECTION_NAME,
+        "db_chunks": int(db_chunks or 0),
+        "chunk_source": chunk_source,
+        "collection_name": settings.QDRANT_COLLECTION,
     }
 
 

@@ -92,6 +92,19 @@ export default function DocPreviewModal({
     // PDF: loading được quản lý qua sự kiện onLoad của iframe
   }, [isOpen, lookupName, isPdf]);
 
+  // Đóng modal bằng phím Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   // Đếm kết quả tìm kiếm (hook phải gọi trước mọi lệnh return sớm)
   const matchCount = useMemo(() => {
     if (!searchQuery.trim() || !previewData?.content) return 0;

@@ -465,6 +465,11 @@ export default function Home() {
                     >
                       <MessageBubble
                         msg={msg}
+                        question={
+                          msg.role === 'model' && messages[index - 1]?.role === 'user'
+                            ? messages[index - 1].content
+                            : undefined
+                        }
                         sessionId={sessionId}
                         isLast={isLast}
                         onRegenerate={regenerate}

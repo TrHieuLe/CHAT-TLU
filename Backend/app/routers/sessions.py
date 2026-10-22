@@ -1,5 +1,6 @@
 import json
 import uuid
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete, select
@@ -7,8 +8,22 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import ensure_session_owner, get_current_user_id
 from app.models.database import ChatMessage, Session, get_db
+from app.routers.chat_formatters import bullets_to_markdown_tables
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
+
+# Giờ Việt Nam (Asia/Ho_Chi_Minh, UTC+7, không có giờ mùa hè). Dùng offset cố định
+# để không phụ thuộc dữ liệu tzdata của hệ điều hành (Windows / image Docker slim).
+VN_TZ = timezone(timedelta(hours=7), "Asia/Ho_Chi_Minh")
+
+
+def _to_vn_time(dt: datetime | None) -> datetime | None:
+    """created_at lưu theo UTC; SQLite trả về datetime không kèm múi giờ."""
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(VN_TZ)
 
 
 def _parse_meta(raw: str | None) -> dict:
@@ -142,23 +157,28 @@ async def export_session(
     messages = res.scalars().all()
 
     if format == "json":
+        def _iso(dt):
+            vn = _to_vn_time(dt)
+            return vn.isoformat() if vn else None
+
         return {
             "id": s.id,
             "title": s.title,
-            "created_at": s.created_at.isoformat() if s.created_at else None,
+            "created_at": _iso(s.created_at),
             "messages": [
                 {
                     "id": m.id,
                     "role": m.role,
                     "content": m.content,
-                    "created_at": m.created_at.isoformat() if m.created_at else None,
+                    "created_at": _iso(m.created_at),
                 }
                 for m in messages
             ],
         }
 
     # Format Markdown
-    time_str = s.created_at.strftime('%d/%m/%Y %H:%M') if s.created_at else ''
+    created_vn = _to_vn_time(s.created_at)
+    time_str = f"{created_vn:%d/%m/%Y %H:%M} (giờ Việt Nam)" if created_vn else ""
     md_lines = [
         f"# Cuộc trò chuyện: {s.title}",
         f"*Thời gian: {time_str}*",
@@ -169,7 +189,8 @@ async def export_session(
     for m in messages:
         sender = "👤 **Sinh viên**" if m.role == "user" else "🤖 **StudyBot**"
         md_lines.append(f"### {sender}")
-        md_lines.append(m.content)
+        content = m.content or ""
+        md_lines.append(bullets_to_markdown_tables(content) if m.role != "user" else content)
         md_lines.append("")
 
     content = "\n".join(md_lines)

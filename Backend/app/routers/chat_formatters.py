@@ -252,6 +252,66 @@ def _convert_table_block_to_bullets(block: list[str]) -> str:
     return "\n".join(out).strip()
 
 
+_BULLET_TITLE_RE = re.compile(r"^- \*\*(.+?)\*\*\s*$")
+_BULLET_DETAIL_RE = re.compile(r"^\s{2,}- (.+)$")
+
+
+def _md_cell(text: str) -> str:
+    return text.replace("|", "\\|").strip()
+
+
+def bullets_to_markdown_tables(text: str) -> str:
+    """Đảo ngược _convert_table_block_to_bullets cho bản xuất hội thoại.
+
+    Một chuỗi >= 2 cặp "- **ô 1**" / "  - ô 2 | ô 3 | ..." (có ít nhất một
+    dòng chi tiết chứa " | ") được dựng lại thành bảng Markdown. Tên cột gốc
+    đã mất khi chuyển sang danh sách nên dùng tên cột chung.
+    """
+    if not text or "- **" not in text:
+        return text
+    lines = text.splitlines()
+    out: list[str] = []
+    i = 0
+    while i < len(lines):
+        rows: list[list[str]] = []
+        has_pipe = False
+        j = i
+        while j < len(lines):
+            m = _BULLET_TITLE_RE.match(lines[j])
+            if not m:
+                break
+            row = [m.group(1).strip()]
+            j += 1
+            if j < len(lines):
+                d = _BULLET_DETAIL_RE.match(lines[j])
+                if d:
+                    detail = d.group(1).strip()
+                    has_pipe = has_pipe or " | " in detail
+                    row.extend(c.strip() for c in detail.split(" | "))
+                    j += 1
+            rows.append(row)
+
+        if len(rows) >= 2 and has_pipe:
+            ncols = max(len(r) for r in rows)
+            if ncols == 2:
+                headers = ["Mục", "Chi tiết"]
+            else:
+                headers = ["Mục"] + [f"Chi tiết {k}" for k in range(1, ncols)]
+            if out and out[-1].strip():
+                out.append("")  # bảng phải tách khỏi đoạn văn phía trước
+            out.append("| " + " | ".join(headers) + " |")
+            out.append("|" + "---|" * ncols)
+            for r in rows:
+                cells = [_md_cell(c) for c in r] + [""] * (ncols - len(r))
+                out.append("| " + " | ".join(cells) + " |")
+            i = j
+            continue
+
+        out.append(lines[i])
+        i += 1
+    return "\n".join(out)
+
+
 def _repair_broken_markdown_tables(text: str) -> str:
     if not text or not _looks_like_already_table(text):
         return text

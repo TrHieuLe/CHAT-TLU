@@ -2,6 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from httpx import ASGITransport, AsyncClient
 from datetime import datetime, timezone
+from types import SimpleNamespace
 
 from main import app
 from app.models.database import get_db, Document
@@ -46,21 +47,50 @@ async def test_list_documents(mock_db_session):
 
 
 @pytest.mark.asyncio
-async def test_document_stats(mock_db_session):
+async def test_document_stats_uses_qdrant_points_count(mock_db_session):
+    # DB chỉ biết 39 chunk (tài liệu nạp bằng ingest.py không cập nhật chunk_count),
+    # Qdrant có 363 điểm thật → thống kê phải báo 363.
+    result_mock = MagicMock()
+    result_mock.first.return_value = (5, 39)
+    mock_db_session.execute.return_value = result_mock
+
+    app.dependency_overrides[get_db] = lambda: mock_db_session
+    fake = AsyncMock(return_value=SimpleNamespace(points_count=363))
+
+    try:
+        with patch("app.routers.document._async.get_collection", fake):
+            transport = ASGITransport(app=app)
+            async with AsyncClient(transport=transport, base_url="http://test") as ac:
+                resp = await ac.get("/api/document/stats")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_documents"] == 5
+        assert data["total_chunks"] == 363
+        assert data["db_chunks"] == 39
+        assert data["chunk_source"] == "qdrant"
+    finally:
+        app.dependency_overrides.clear()
+
+
+@pytest.mark.asyncio
+async def test_document_stats_falls_back_to_db_when_qdrant_down(mock_db_session):
     result_mock = MagicMock()
     result_mock.first.return_value = (5, 120)
     mock_db_session.execute.return_value = result_mock
 
     app.dependency_overrides[get_db] = lambda: mock_db_session
+    down = AsyncMock(side_effect=ConnectionError())
 
     try:
-        transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as ac:
-            resp = await ac.get("/api/document/stats")
-            assert resp.status_code == 200
-            data = resp.json()
-            assert data["total_documents"] == 5
-            assert data["total_chunks"] == 120
+        with patch("app.routers.document._async.get_collection", down):
+            transport = ASGITransport(app=app)
+            async with AsyncClient(transport=transport, base_url="http://test") as ac:
+                resp = await ac.get("/api/document/stats")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_documents"] == 5
+        assert data["total_chunks"] == 120
+        assert data["chunk_source"] == "database"
     finally:
         app.dependency_overrides.clear()
 

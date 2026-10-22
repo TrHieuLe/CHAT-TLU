@@ -21,6 +21,7 @@ import {
   Eye,
 } from "lucide-react";
 import { buildDocumentReferenceUrl, sendFeedback, toAbsoluteApiUrl } from "@/lib/api";
+import { getSmartFollowups } from "@/lib/followups";
 import clsx from "clsx";
 
 type NormalizedSource = {
@@ -31,6 +32,8 @@ type NormalizedSource = {
 
 interface MessageBubbleProps {
   msg: Message;
+  /** Câu hỏi của người dùng mà tin nhắn này trả lời (dùng để chọn gợi ý) */
+  question?: string;
   sessionId?: string;
   isLast?: boolean;
   onRegenerate?: () => void;
@@ -40,6 +43,7 @@ interface MessageBubbleProps {
 
 export default function MessageBubble({
   msg,
+  question,
   sessionId,
   isLast,
   onRegenerate,
@@ -54,8 +58,8 @@ export default function MessageBubble({
 
   const followups = useMemo(() => {
     if (isUser || msg.isStreaming || !msg.content || !isLast) return [];
-    return getSmartFollowups(msg.content);
-  }, [isUser, msg.isStreaming, msg.content, isLast]);
+    return getSmartFollowups(msg.content, question, sources.map((s) => s.title));
+  }, [isUser, msg.isStreaming, msg.content, isLast, question, sources]);
 
   const imageUrls = useMemo(() => {
     if (!msg.images || msg.images.length === 0) return [];
@@ -298,40 +302,6 @@ export default function MessageBubble({
       </div>
     </div>
   );
-}
-
-function getSmartFollowups(content: string): string[] {
-  if (!content) return [];
-  const lower = content.toLowerCase();
-  const suggestions: string[] = [];
-
-  if (lower.includes("học bổng") || lower.includes("khuyến khích")) {
-    suggestions.push("Học bổng loại Xuất sắc cần điều kiện gì?", "Điểm rèn luyện tối thiểu xét học bổng?");
-  }
-  if (lower.includes("thi lại") || lower.includes("học lại") || lower.includes("cải thiện")) {
-    suggestions.push("Cách tính điểm học phần khi học cải thiện?", "Học phí khi đăng ký học lại tính như thế nào?");
-  }
-  if (lower.includes("điểm chuẩn") || lower.includes("tuyển sinh") || lower.includes("ngành")) {
-    suggestions.push("Hồ sơ đăng ký xét tuyển đại học gồm những gì?", "Học phí dự kiến các ngành năm nay?");
-  }
-  if (lower.includes("tiếng anh") || lower.includes("toeic") || lower.includes("chuẩn đầu ra")) {
-    suggestions.push("Bảng quy đổi chứng chỉ TOEIC sang chuẩn đầu ra?", "Thời hạn nộp chứng chỉ để xét tốt nghiệp?");
-  }
-  if (lower.includes("học phí") || lower.includes("tín chỉ") || lower.includes("thanh toán")) {
-    suggestions.push("Thời hạn nộp học phí học kỳ này?", "Cách thanh toán học phí qua tài khoản ngân hàng?");
-  }
-  if (lower.includes("cảnh báo") || lower.includes("thôi học") || lower.includes("xếp loại")) {
-    suggestions.push("Bao nhiêu điểm CPA thì bị cảnh báo học vụ?", "Điều kiện để được xét tốt nghiệp ra trường?");
-  }
-
-  if (suggestions.length === 0) {
-    suggestions.push(
-      "Quy chế thi lại và học lại của trường?",
-      "Chuẩn đầu ra Tiếng Anh quy định như thế nào?"
-    );
-  }
-
-  return suggestions.slice(0, 2);
 }
 
 // ==========================================

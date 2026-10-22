@@ -1,5 +1,5 @@
 "use client";
-import { useRef, useState, KeyboardEvent, ChangeEvent } from "react";
+import { useRef, useState, KeyboardEvent, ChangeEvent, ClipboardEvent } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
 import { Send, Mic, MicOff, Loader2, Image as ImageIcon, X } from "lucide-react";
 import clsx from "clsx";
@@ -53,24 +53,42 @@ export default function ChatInput({ onSend, onSendImage, loading, hasDocs }: Pro
     sendText();
   };
 
-  const onPickFile = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  // Kiểm tra loại/kích thước ảnh, dùng chung cho chọn file và dán (Ctrl+V)
+  const acceptImage = (file: File): boolean => {
     const okType = ["image/png", "image/jpeg", "image/jpg", "image/webp"].includes(file.type);
     if (!okType) {
       alert("Chỉ hỗ trợ PNG, JPG, JPEG, WEBP");
-      e.target.value = "";
-      return;
+      return false;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       alert("Ảnh vượt quá 5MB");
-      e.target.value = "";
-      return;
+      return false;
     }
 
     setPickedImage(file);
+    return true;
+  };
+
+  const onPickFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!acceptImage(file)) e.target.value = "";
+  };
+
+  const onPasteImage = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    const item = Array.from(e.clipboardData?.items ?? []).find(
+      (it) => it.kind === "file" && it.type.startsWith("image/")
+    );
+    const blob = item?.getAsFile();
+    if (!blob) return; // dán chữ: giữ hành vi mặc định
+
+    e.preventDefault();
+    const ext = blob.type.split("/")[1] || "png";
+    const file = blob.name && blob.name !== "image.png"
+      ? blob
+      : new File([blob], `anh-dan-${Date.now()}.${ext}`, { type: blob.type });
+    if (acceptImage(file) && fileRef.current) fileRef.current.value = "";
   };
 
   const display = listening && interim ? val + (val ? " " : "") + interim : val;
@@ -151,6 +169,7 @@ export default function ChatInput({ onSend, onSendImage, loading, hasDocs }: Pro
             setVal(e.target.value);
             resize();
           }}
+          onPaste={onPasteImage}
           onKeyDown={(e: KeyboardEvent<HTMLTextAreaElement>) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
