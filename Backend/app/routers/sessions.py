@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_current_user_id
+from app.core.auth import ensure_session_owner, get_current_user_id
 from app.models.database import ChatMessage, Session, get_db
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
@@ -44,10 +44,11 @@ async def list_sessions(
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    query = select(Session)
-    if user_id != "default_user":
-        query = query.where((Session.user_id == user_id) | (Session.user_id == "default_user"))
-    query = query.order_by(Session.updated_at.desc())
+    query = (
+        select(Session)
+        .where(Session.user_id == user_id)
+        .order_by(Session.updated_at.desc())
+    )
     r = await db.execute(query)
     return [
         {
@@ -68,12 +69,10 @@ async def get_history(
 ):
     r = await db.execute(select(Session).where(Session.id == sid))
     session_obj = r.scalar_one_or_none()
-    if session_obj:
-        if session_obj.user_id == "default_user" and user_id != "default_user":
-            session_obj.user_id = user_id
-            await db.commit()
-        elif user_id != "default_user" and session_obj.user_id != user_id:
-            raise HTTPException(403, "Bạn không có quyền truy cập phiên này")
+    if session_obj is None:
+        # Phiên mới trên client, chưa gửi câu hỏi nào
+        return []
+    ensure_session_owner(session_obj.user_id, user_id)
     r = await db.execute(
         select(ChatMessage)
         .where(ChatMessage.session_id == sid)
@@ -116,11 +115,8 @@ async def rename_session(
     s = r.scalar_one_or_none()
     if not s:
         raise HTTPException(404, "Không tìm thấy session")
-    if s.user_id != "default_user" and user_id != "default_user" and s.user_id != user_id:
-        raise HTTPException(403, "Bạn không có quyền sửa phiên này")
+    ensure_session_owner(s.user_id, user_id, "sửa")
     s.title = title
-    if s.user_id == "default_user" and user_id != "default_user":
-        s.user_id = user_id
     await db.commit()
     return {"id": s.id, "title": s.title}
 
@@ -136,8 +132,7 @@ async def export_session(
     s = r.scalar_one_or_none()
     if not s:
         raise HTTPException(404, "Không tìm thấy session")
-    if s.user_id != "default_user" and user_id != "default_user" and s.user_id != user_id:
-        raise HTTPException(403, "Bạn không có quyền xuất phiên này")
+    ensure_session_owner(s.user_id, user_id, "xuất")
 
     res = await db.execute(
         select(ChatMessage)
@@ -197,10 +192,9 @@ async def del_session(
     s = r.scalar_one_or_none()
     if not s:
         raise HTTPException(404, "Không tìm thấy session")
-    if s.user_id != "default_user" and user_id != "default_user" and s.user_id != user_id:
-        raise HTTPException(403, "Bạn không có quyền xóa phiên này")
+    ensure_session_owner(s.user_id, user_id, "xóa")
 
     await db.execute(delete(ChatMessage).where(ChatMessage.session_id == sid))
     await db.execute(delete(Session).where(Session.id == sid))
     await db.commit()
-    return {"ok": True}
+    return {"ok": True}

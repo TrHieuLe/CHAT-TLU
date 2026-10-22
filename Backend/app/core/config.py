@@ -82,6 +82,9 @@ class Settings(BaseSettings):
     # Bảo mật
     ADMIN_API_KEY: str | None = None        # bắt buộc để dùng endpoint quản trị (header X-Admin-Key)
     ADMIN_AUTH_DISABLED: bool = False       # chỉ bật cho test/dev
+    # Request thiếu X-User-ID: False → 401; True → coi là "default_user" (chế độ một người dùng,
+    # thấy cả phiên cũ trước khi có đa người dùng). Không bật khi nhiều người dùng chung server.
+    ALLOW_ANONYMOUS_USER: bool = False
     CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
     CORS_ORIGIN_REGEX: str | None = None    # vd: https://.*\.trycloudflare\.com
     RATE_LIMIT_PER_MINUTE: int = 20         # số câu hỏi / phút / (IP + user), 0 = tắt

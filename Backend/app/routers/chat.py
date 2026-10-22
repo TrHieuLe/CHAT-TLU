@@ -561,7 +561,7 @@ async def _stream_followup_about_last_image(
 
 # ─── API Endpoints ───────────────────────────────────────────────────────────
 
-from app.core.auth import get_current_user_id, require_admin
+from app.core.auth import ensure_session_owner, get_current_user_id, require_admin
 from app.core.rate_limit import check_rate_limit
 
 @router.post("/stream", dependencies=[Depends(check_rate_limit)])
@@ -577,11 +577,7 @@ async def chat_stream(
     res_sess = await db.execute(select(Session).where(Session.id == req.session_id))
     sess = res_sess.scalar_one_or_none()
     if sess:
-        if sess.user_id == "default_user" and user_id != "default_user":
-            sess.user_id = user_id
-            await db.commit()
-        elif user_id != "default_user" and sess.user_id != user_id:
-            raise HTTPException(403, "Bạn không có quyền truy cập phiên trò chuyện này")
+        ensure_session_owner(sess.user_id, user_id)
     else:
         # Tự động tạo session cho user nếu chưa tồn tại
         sess = Session(id=req.session_id, user_id=user_id)
@@ -629,20 +625,12 @@ async def analyze_uploaded_image(
     db: AsyncSession = Depends(get_db),
     user_id: str = Depends(get_current_user_id),
 ):
-    # Kiểm tra hoặc tạo session
     res_sess = await db.execute(select(Session).where(Session.id == session_id))
     sess = res_sess.scalar_one_or_none()
     if sess:
-        if sess.user_id == "default_user" and user_id != "default_user":
-            sess.user_id = user_id
-            await db.commit()
-        elif user_id != "default_user" and sess.user_id != user_id:
-            raise HTTPException(403, "Bạn không có quyền truy cập phiên trò chuyện này")
-    else:
-        sess = Session(id=session_id, user_id=user_id)
-        db.add(sess)
-        await db.commit()
+        ensure_session_owner(sess.user_id, user_id)
 
+    # Kiểm tra ảnh trước khi tạo session để request lỗi không để lại phiên rỗng
     if image.content_type not in {"image/png", "image/jpeg", "image/jpg", "image/webp"}:
         raise HTTPException(400, "Chỉ hỗ trợ PNG, JPG, JPEG, WEBP")
 
@@ -651,6 +639,11 @@ async def analyze_uploaded_image(
         raise HTTPException(400, "Ảnh rỗng")
     if len(raw) > 5 * 1024 * 1024:
         raise HTTPException(400, "Ảnh vượt quá 5MB")
+
+    if sess is None:
+        sess = Session(id=session_id, user_id=user_id)
+        db.add(sess)
+        await db.commit()
 
     ext = Path(image.filename or "upload.jpg").suffix.lower()
     if ext not in {".png", ".jpg", ".jpeg", ".webp"}:

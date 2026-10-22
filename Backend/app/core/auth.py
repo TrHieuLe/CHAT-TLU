@@ -9,6 +9,11 @@ from app.core.config import settings
 _USER_ID_RE = re.compile(r"^[A-Za-z0-9_.@-]{1,64}$")
 
 
+# Chủ sở hữu của phiên/ký ức tạo trước khi có đa người dùng, và của mọi request
+# không định danh khi bật ALLOW_ANONYMOUS_USER. Client không được tự xưng ID này.
+DEFAULT_USER_ID = "default_user"
+
+
 def get_current_user_id(
     request: Request,
     x_user_id: str | None = Header(None, alias="X-User-ID"),
@@ -19,7 +24,7 @@ def get_current_user_id(
     Thứ tự ưu tiên:
       1. Header `X-User-ID`
       2. Query param `user_id`
-      3. Fallback: "default_user"
+      3. Không có: 401, hoặc DEFAULT_USER_ID nếu bật ALLOW_ANONYMOUS_USER (chế độ một người dùng)
 
     Lưu ý: đây là mô hình guest token — ID do client tự sinh, không có xác thực.
     Chỉ kiểm tra định dạng để chặn dữ liệu rác.
@@ -29,8 +34,18 @@ def get_current_user_id(
             uid = candidate.strip()
             if not _USER_ID_RE.match(uid):
                 raise HTTPException(status_code=400, detail="User ID không hợp lệ")
+            if uid == DEFAULT_USER_ID:
+                raise HTTPException(status_code=400, detail="User ID này được hệ thống dành riêng")
             return uid
-    return "default_user"
+    if settings.ALLOW_ANONYMOUS_USER:
+        return DEFAULT_USER_ID
+    raise HTTPException(status_code=401, detail="Thiếu định danh người dùng (header X-User-ID)")
+
+
+def ensure_session_owner(session_owner: str | None, user_id: str, action: str = "truy cập") -> None:
+    """Chỉ chủ phiên được đọc/sửa. Phiên DEFAULT_USER_ID cũ không bị người khác nhận."""
+    if session_owner != user_id:
+        raise HTTPException(status_code=403, detail=f"Bạn không có quyền {action} phiên này")
 
 
 def require_admin(x_admin_key: str | None = Header(None, alias="X-Admin-Key")) -> None:

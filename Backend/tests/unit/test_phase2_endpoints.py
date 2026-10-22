@@ -13,6 +13,8 @@ from main import app
 from app.models.database import Session, ChatMessage, AsyncSessionLocal, init_db
 from app.llm.llm_service import llm_service
 
+USER = {"X-User-ID": "phase2-user"}
+
 
 class TestLLMServiceUtilities:
     def test_count_tokens(self):
@@ -35,7 +37,7 @@ class TestPhase2Endpoints:
 
     async def test_session_rename(self):
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
+        async with AsyncClient(transport=transport, base_url="http://test", headers=USER) as client:
             # 1. Tạo session mới
             res = await client.post("/api/sessions/")
             assert res.status_code == 200
@@ -59,7 +61,7 @@ class TestPhase2Endpoints:
 
     async def test_session_export(self):
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
+        async with AsyncClient(transport=transport, base_url="http://test", headers=USER) as client:
             # 1. Tạo session
             res = await client.post("/api/sessions/")
             sid = res.json()["id"]
@@ -86,7 +88,7 @@ class TestPhase2Endpoints:
 
     async def test_submit_feedback(self):
         transport = ASGITransport(app=app)
-        async with AsyncClient(transport=transport, base_url="http://test") as client:
+        async with AsyncClient(transport=transport, base_url="http://test", headers=USER) as client:
             # 1. Submit Like
             fb_res = await client.post(
                 "/api/chat/feedback",
