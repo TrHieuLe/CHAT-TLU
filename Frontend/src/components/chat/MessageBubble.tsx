@@ -520,6 +520,18 @@ function convertBrokenTable(lines: string[], startIndex: number) {
 function sanitizeInline(text: string) {
   return text.replace(/\[DONE\]/g, "").replace(/\[CONTENT\]/g, "").replace(/\[CONTEXT\s*\d+\]/gi, "").replace(/\[BẢNG\s*\d+\]/gi, "").replace(/\[TABLE\s*\d+\]/gi, "").replace(/^\s*\(?\s*Nguồn\s*:[^\n]*\)?\s*$/gim, "").replace(/^\s*\(?\s*Nguon\s*:[^\n]*\)?\s*$/gim, "").replace(/<br\s*\/?>/gi, "\n- ").replace(/\s+/g, " ").trim();
 }
+// Ô bảng GFM không chứa được xuống dòng: đổi <br> trong dòng bảng thành "• ý 1 • ý 2"
+// trước khi <br> còn lại bị đổi thành "\n" (nếu không dòng bảng bị cắt đôi).
+// Cùng quy tắc với _join_cell_breaks ở Backend (chat_formatters.py).
+function joinTableCellBreaks(text: string) {
+  if (!/<br/i.test(text)) return text;
+  return text.split("\n").map((line) => {
+    if (!line.trim().startsWith("|")) return line;
+    return line
+      .replace(/\s*<br\s*\/?>\s*(?:[-*•]\s+)?/gi, " • ")
+      .replace(/\|\s*[-*]\s+(?=[^|]*•)/g, "| • ");
+  }).join("\n");
+}
 function normalizeBrokenMarkdownTables(text: string) {
   const lines = text.split("\n"); const out: string[] = []; let i = 0;
   while (i < lines.length) {
@@ -570,7 +582,7 @@ function normalizeBotMarkdown(text: string) {
   if (!text) return "";
   
   // Dọn dẹp các mã code rác sinh ra từ API nếu có
-  let cleaned = text.replace(/\r\n/g, "\n")
+  let cleaned = joinTableCellBreaks(text.replace(/\r\n/g, "\n"))
     .replace(/\[DONE\]/g, "")
     .replace(/\[CONTENT\]/g, "")
     .replace(/\[CONTEXT\s*\d+\]/gi, "")

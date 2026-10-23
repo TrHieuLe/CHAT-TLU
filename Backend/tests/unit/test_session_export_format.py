@@ -15,6 +15,7 @@ from app.routers.chat_formatters import (
     _convert_table_block_to_bullets,
     bullets_to_markdown_tables,
     postprocess_answer,
+    restore_markdown_tables,
 )
 from app.routers.sessions import _to_vn_time
 
@@ -112,3 +113,72 @@ async def test_export_markdown_uses_vn_time_and_tables():
 
     assert js.status_code == 200
     assert js.json()["created_at"].startswith("2026-10-22T11:57:00+07:00")
+
+
+# ─── Lịch sử phiên ────────────────────────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_history_returns_markdown_tables_for_stored_bullets():
+    """Mở lại phiên từ sidebar: câu trả lời đã lưu dạng danh sách (kể cả dữ liệu cũ)
+    được trả về thành bảng Markdown; câu hỏi của người dùng giữ nguyên."""
+    await init_db()
+    sid = f"history-{uuid.uuid4()}"
+    stored = postprocess_answer("\n".join(WIDE_TABLE), "Điểm chuẩn các ngành")
+    assert "- **1**" in stored
+    user_text = "- **1**\n  - a | b\n- **2**\n  - c | d"  # người dùng gõ gì thì giữ nguyên
+
+    async with AsyncSessionLocal() as db:
+        db.add(Session(id=sid, user_id=USER["X-User-ID"], title="Điểm chuẩn"))
+        db.add(ChatMessage(session_id=sid, role="user", content=user_text,
+                           created_at=datetime(2026, 10, 22, 4, 57)))
+        db.add(ChatMessage(session_id=sid, role="model", content=stored,
+                           created_at=datetime(2026, 10, 22, 4, 58)))
+        await db.commit()
+
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test", headers=USER) as client:
+        r = await client.get(f"/api/sessions/{sid}/history")
+
+    assert r.status_code == 200
+    items = r.json()
+    assert [m["role"] for m in items] == ["user", "model"]
+    assert items[0]["content"] == user_text
+    answer = items[1]["content"]
+    assert answer.splitlines()[0] == "| Mục | Chi tiết 1 | Chi tiết 2 | Chi tiết 3 |"
+    assert "| 7 | Ngành số 7 | 7480107 | 27.5 |" in answer
+    assert "- **" not in answer
+
+
+# ─── <br> trong ô bảng ────────────────────────────────────────────────────────
+
+BR_TABLE = "\n".join([
+    "Các điều kiện:",
+    "",
+    "| STT | Điều kiện | Chi tiết |",
+    "| :--- | :--- | :--- |",
+    "| 1 | Kỷ luật | - Không bị truy cứu hình sự.<br>- Không bị đình chỉ học tập. |",
+    "| 2 | Tín chỉ | - Tích lũy đủ tín chỉ. |",
+    "",
+    "*Nguồn: QĐ-1226*",
+])
+BR_ROW = "| 1 | Kỷ luật | • Không bị truy cứu hình sự. • Không bị đình chỉ học tập. |"
+
+
+def test_postprocess_keeps_table_rows_with_br_in_cell():
+    out = postprocess_answer(BR_TABLE, "Điều kiện tốt nghiệp gồm những gì?")
+    assert BR_ROW in out.splitlines()
+    assert "| 2 | Tín chỉ | - Tích lũy đủ tín chỉ. |" in out.splitlines()
+
+
+def test_restore_rejoins_rows_split_by_old_br_handling():
+    # Bản đã lưu trước khi sửa: <br> bị đổi thành "\n" → dòng 1 bị cắt đôi
+    legacy = BR_TABLE.replace("<br>", "\n")
+    restored = restore_markdown_tables(legacy).splitlines()
+    assert BR_ROW in restored
+    assert restored[-1] == "*Nguồn: QĐ-1226*"
+    assert restore_markdown_tables(restore_markdown_tables(legacy)) == restore_markdown_tables(legacy)
+
+
+def test_restore_leaves_non_table_text_alone():
+    text = "Đoạn 1\n- ý a | ý b\ntiếp |"
+    assert restore_markdown_tables(text) == text

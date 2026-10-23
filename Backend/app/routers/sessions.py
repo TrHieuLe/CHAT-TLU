@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.auth import ensure_session_owner, get_current_user_id
 from app.models.database import ChatMessage, Session, get_db
-from app.routers.chat_formatters import bullets_to_markdown_tables
+from app.routers.chat_formatters import restore_markdown_tables
 
 router = APIRouter(prefix="/api/sessions", tags=["sessions"])
 
@@ -100,7 +100,9 @@ async def get_history(
       items.append({
           "id": m.id,
           "role": m.role,
-          "content": m.content,
+          # Bảng rộng đã bị postprocess_answer đổi thành danh sách khi lưu → dựng lại bảng
+          # để phiên mở lại hiển thị giống lúc stream (áp dụng cả cho dữ liệu cũ).
+          "content": restore_markdown_tables(m.content) if m.role != "user" else m.content,
           "sources": meta.get("sources", []),
           "images": meta.get("images", []),
       })
@@ -190,7 +192,7 @@ async def export_session(
         sender = "👤 **Sinh viên**" if m.role == "user" else "🤖 **StudyBot**"
         md_lines.append(f"### {sender}")
         content = m.content or ""
-        md_lines.append(bullets_to_markdown_tables(content) if m.role != "user" else content)
+        md_lines.append(restore_markdown_tables(content) if m.role != "user" else content)
         md_lines.append("")
 
     content = "\n".join(md_lines)

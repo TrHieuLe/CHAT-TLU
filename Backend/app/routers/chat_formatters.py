@@ -312,6 +312,86 @@ def bullets_to_markdown_tables(text: str) -> str:
     return "\n".join(out)
 
 
+_CELL_BR_RE = re.compile(r"\s*<br\s*/?>\s*(?:[-*•]\s+)?", re.IGNORECASE)
+_CELL_DASH_RE = re.compile(r"\|\s*[-*]\s+(?=[^|]*•)")
+_TABLE_SEP_RE = re.compile(r"\|?[:\-|]+\|?")
+
+
+def _join_cell_breaks(row: str) -> str:
+    """Gộp các ý xuống dòng (<br>) trong một ô bảng thành "• ý 1 • ý 2".
+
+    Ô bảng GFM không chứa được xuống dòng, và <br> không được render (không dùng
+    rehype-raw) → đổi <br> thành "\n" sẽ cắt đôi dòng bảng. Cùng quy tắc với
+    joinTableCellBreaks ở Frontend (MessageBubble.tsx).
+    """
+    if "<br" not in row.lower():
+        return row
+    row = _CELL_BR_RE.sub(" • ", row)
+    return _CELL_DASH_RE.sub("| • ", row)
+
+
+def _rejoin_split_table_rows(text: str) -> str:
+    """Nối lại dòng bảng đã bị cắt đôi vì <br> trong ô bị đổi thành "\n".
+
+    Trong một bảng (sau dòng tiêu đề + dòng phân cách), dòng bắt đầu bằng "|" nhưng
+    không kết thúc bằng "|" được nối với các dòng sau cho đến dòng kết thúc bằng "|".
+    Dùng cho câu trả lời mới (postprocess_answer) lẫn dữ liệu cũ đã lưu.
+    """
+    if not text or "|" not in text:
+        return text
+    lines = text.split("\n")
+    out: list[str] = []
+    in_table = False
+    i = 0
+    while i < len(lines):
+        s = lines[i].strip()
+        if not s.startswith("|"):
+            in_table = False
+            out.append(lines[i])
+            i += 1
+            continue
+        if not in_table:
+            nxt = lines[i + 1].strip() if i + 1 < len(lines) else ""
+            if nxt.startswith("|") and _TABLE_SEP_RE.fullmatch(nxt.replace(" ", "")):
+                in_table = True
+                out.extend(lines[i:i + 2])
+                i += 2
+            else:
+                out.append(lines[i])
+                i += 1
+            continue
+        if s.endswith("|"):
+            out.append(_join_cell_breaks(lines[i]))
+            i += 1
+            continue
+        parts = [lines[i].rstrip()]
+        j = i + 1
+        while j < len(lines) and j - i <= 10:
+            t = lines[j].strip()
+            if not t or t.startswith("|"):
+                break
+            parts.append(t)
+            j += 1
+            if t.endswith("|"):
+                break
+        if len(parts) > 1 and parts[-1].endswith("|"):
+            out.append(_join_cell_breaks("<br>".join(parts)))
+            i = j
+        else:
+            out.append(lines[i])
+            i += 1
+    return "\n".join(out)
+
+
+def restore_markdown_tables(text: str) -> str:
+    """Bảng Markdown để hiển thị lại câu trả lời đã lưu (lịch sử, semantic cache, bản xuất).
+
+    Dữ liệu trong DB/cache là bản sau postprocess_answer: bảng rộng đã thành danh sách,
+    bản cũ có thể còn dòng bảng bị cắt đôi vì <br>. Chỉ biến đổi khi hiển thị, không ghi lại.
+    """
+    return bullets_to_markdown_tables(_rejoin_split_table_rows(text))
+
+
 def _repair_broken_markdown_tables(text: str) -> str:
     if not text or not _looks_like_already_table(text):
         return text
@@ -347,6 +427,7 @@ def postprocess_answer(text: str, question: str) -> str:
         .replace("<br/>", "\n")
         .replace("<br />", "\n")
     )
+    text = _rejoin_split_table_rows(text)
     text = _auto_convert_short_answer_to_table(text, question)
     text = _repair_broken_markdown_tables(text)
     text = re.sub(r"\n{3,}", "\n\n", text).strip()

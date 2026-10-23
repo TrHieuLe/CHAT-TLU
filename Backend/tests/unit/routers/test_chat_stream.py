@@ -147,3 +147,54 @@ async def test_rag_answer_cached_with_generated_title():
         ))
     entry, _ = cache.get_entry("Điều kiện tốt nghiệp?")
     assert entry.title == "Điều kiện tốt nghiệp"
+
+
+WIDE_TABLE_ANSWER = "\n".join([
+    "Điều kiện tốt nghiệp gồm:",
+    "",
+    "| STT | Điều kiện | Chi tiết |",
+    "|---|---|---|",
+    *[f"| {i} | Điều kiện số {i} | Mô tả {i} |" for i in range(1, 14)],
+])
+
+
+def _streamed_text(events: list[str]) -> str:
+    import json
+    out = []
+    for e in events:
+        payload = e[len("data: "):].rstrip("\n")
+        if payload.startswith("\""):
+            out.append(json.loads(payload))
+    return "".join(out)
+
+
+@pytest.mark.asyncio
+async def test_cache_hit_streams_markdown_table_not_bullets():
+    """Bảng rộng bị postprocess_answer đổi thành danh sách khi lưu cache; lượt trúng cache
+    phải gửi lại bảng Markdown cho client như lúc stream lần đầu."""
+    async def _table_stream(**kwargs):
+        yield WIDE_TABLE_ANSWER
+
+    cache = SemanticCache()
+    with _pipeline(cache, stream=_table_stream):
+        first = await _collect(chat._stream_text_answer(
+            session_id=await _new_session(), question="Điều kiện tốt nghiệp gồm những gì?", history=[],
+        ))
+        assert "| 1 | Điều kiện số 1 | Mô tả 1 |" in _streamed_text(first)
+        entry, _ = cache.get_entry("Điều kiện tốt nghiệp gồm những gì?")
+        assert "- **1**" in entry.answer  # cache vẫn giữ bản đã lưu (để dislike khớp nội dung DB)
+
+        session_id = await _new_session()
+        second = await _collect(chat._stream_text_answer(
+            session_id=session_id, question="Điều kiện tốt nghiệp gồm những gì?", history=[],
+        ))
+    text = _streamed_text(second)
+    assert "| Mục | Chi tiết 1 | Chi tiết 2 |" in text
+    assert "| 1 | Điều kiện số 1 | Mô tả 1 |" in text
+    assert "| 13 | Điều kiện số 13 | Mô tả 13 |" in text
+    assert "- **" not in text
+
+    async with AsyncSessionLocal() as db:
+        msgs = (await db.execute(select(ChatMessage).where(ChatMessage.session_id == session_id))).scalars().all()
+        assert [m.role for m in msgs] == ["user", "model"]
+        assert msgs[1].content == entry.answer

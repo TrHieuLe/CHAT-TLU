@@ -41,6 +41,7 @@ from app.routers.chat_formatters import (
     normalize_text,
     wants_table_answer,
     postprocess_answer,
+    restore_markdown_tables,
 )
 from app.routers.chat_followup import (
     is_reference_followup,
@@ -407,7 +408,9 @@ async def _stream_text_answer(
 
                     # Hiệu ứng stream ngắn: ~10 đoạn. (sleep trên Windows tối thiểu ~15ms, nên
                     # chia nhỏ theo từng 3 từ từng làm câu trả lời cache chậm thêm ~1.3s)
-                    words = cached_answer.split(" ")
+                    # Cache (và DB) giữ bản đã đổi bảng → danh sách; chỉ dựng lại bảng khi gửi
+                    # cho client, để remove_by_answer (dislike) vẫn khớp nội dung đã lưu.
+                    words = restore_markdown_tables(cached_answer).split(" ")
                     step = max(1, -(-len(words) // 10))
                     timer.mark_since_start("ttft")
                     for i in range(0, len(words), step):
@@ -541,7 +544,8 @@ async def _stream_followup_about_last_image(
                 logger.exception("Vision follow-up error: %s", e)
                 full = "Mình chưa phân tích tiếp được ảnh này. Hãy thử lại."
 
-            yield f"data: {json.dumps(full, ensure_ascii=False)}\n\n"
+            # DB giữ bản postprocess (bảng rộng → danh sách); client nhận bảng như lịch sử
+            yield f"data: {json.dumps(restore_markdown_tables(full), ensure_ascii=False)}\n\n"
 
             model_msg = ChatMessage(
                 session_id=session_id,
@@ -692,7 +696,7 @@ async def analyze_uploaded_image(
 
     return {
         "ok": True,
-        "answer": answer,
+        "answer": restore_markdown_tables(answer),
         "image_url": image_url,
         "message_id": model_msg.id,
     }
