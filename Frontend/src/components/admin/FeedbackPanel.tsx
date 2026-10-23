@@ -148,7 +148,7 @@ export function FeedbackPanel() {
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     <button
                       onClick={() => handleAddToEval(fb.id)}
-                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-indigo-700 bg-indigo-50 hover:bg-indigo-100 rounded-lg"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-tlu-blue-dark bg-tlu-tint hover:bg-tlu-tint-2 rounded-lg"
                       title="Ghi câu hỏi vào benchmark_eval/data/feedback_candidates.jsonl"
                     >
                       <FlaskConical className="w-3.5 h-3.5" />

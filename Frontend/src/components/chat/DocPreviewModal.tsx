@@ -128,7 +128,7 @@ export default function DocPreviewModal({
 
   const renderFileIcon = () => {
     if (isPdf) return <FileText className="w-5 h-5 text-red-600" />;
-    if (isDocx) return <FileText className="w-5 h-5 text-blue-600" />;
+    if (isDocx) return <FileText className="w-5 h-5 text-tlu-blue" />;
     if (isExcel) return <FileSpreadsheet className="w-5 h-5 text-emerald-600" />;
     if (isText) return <FileCode className="w-5 h-5 text-emerald-600" />;
     return <FileSpreadsheet className="w-5 h-5 text-amber-600" />;
@@ -204,7 +204,7 @@ export default function DocPreviewModal({
                 {displayTitle}
               </h3>
               <div className="flex items-center gap-2 text-xs text-slate-500">
-                <span className="inline-flex items-center gap-1 font-medium text-blue-700 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100">
+                <span className="inline-flex items-center gap-1 font-medium text-tlu-blue-dark bg-tlu-tint px-2 py-0.5 rounded-md border border-tlu-tint-2">
                   {getFormatBadge()}
                 </span>
                 <span className="hidden sm:inline">• Đại học Thủy lợi (TLU)</span>
@@ -216,7 +216,7 @@ export default function DocPreviewModal({
             {previewData?.ok && previewData.content && (
               <button
                 onClick={handleCopyText}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200 bg-white"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-tlu-blue-dark hover:bg-tlu-tint rounded-lg transition-colors border border-slate-200 bg-white"
                 title="Sao chép nội dung văn bản"
               >
                 {copied ? (
@@ -245,7 +245,7 @@ export default function DocPreviewModal({
               href={docUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors border border-slate-200 bg-white"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-tlu-blue-dark hover:bg-tlu-tint rounded-lg transition-colors border border-slate-200 bg-white"
               title="Mở trong tab mới"
             >
               <ExternalLink className="w-3.5 h-3.5" />
@@ -255,7 +255,7 @@ export default function DocPreviewModal({
             <a
               href={docUrl}
               download
-              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-medium text-white bg-tlu-blue hover:bg-tlu-blue-dark rounded-lg transition-colors shadow-xs"
               title="Tải về máy tính"
             >
               <Download className="w-3.5 h-3.5" />
@@ -282,7 +282,7 @@ export default function DocPreviewModal({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm từ khóa trong văn bản..."
-                className="w-full bg-white px-2.5 py-1 rounded-md border border-slate-200 outline-none focus:border-blue-400 text-slate-700"
+                className="w-full bg-white px-2.5 py-1 rounded-md border border-slate-200 outline-none focus:border-tlu-line text-slate-700"
               />
             </div>
             {searchQuery.trim() && (
@@ -300,7 +300,7 @@ export default function DocPreviewModal({
             <div className="w-full h-full relative">
               {loading && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-50 z-10 gap-3">
-                  <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                  <Loader2 className="w-8 h-8 text-tlu-blue animate-spin" />
                   <p className="text-sm font-medium text-slate-600">Đang tải tài liệu PDF...</p>
                 </div>
               )}
@@ -320,14 +320,14 @@ export default function DocPreviewModal({
             <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-50">
               {loading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-3 py-20">
-                  <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                  <Loader2 className="w-8 h-8 text-tlu-blue animate-spin" />
                   <p className="text-sm font-medium text-slate-600">Đang chuẩn bị nội dung tài liệu...</p>
                 </div>
               ) : previewData?.ok && previewData.content ? (
                 <div className="max-w-4xl mx-auto bg-white p-6 sm:p-10 rounded-2xl shadow-sm border border-slate-200">
                   <div className="mb-6 pb-4 border-b border-slate-100 flex items-center justify-between">
                     <div className="flex items-center gap-2 text-xs text-slate-500 font-medium">
-                      <BookOpen className="w-4 h-4 text-blue-600" />
+                      <BookOpen className="w-4 h-4 text-tlu-blue" />
                       <span>Nội dung tài liệu</span>
                     </div>
                     {previewData.file_size > 0 && (
@@ -347,7 +347,7 @@ export default function DocPreviewModal({
                           </h1>
                         ),
                         h2: ({ children }) => (
-                          <h2 className="text-lg font-bold text-slate-900 mt-5 mb-2 border-l-4 border-blue-600 pl-3 bg-blue-50/50 py-1 rounded-r">
+                          <h2 className="text-lg font-bold text-slate-900 mt-5 mb-2 border-l-4 border-tlu-blue pl-3 bg-tlu-tint/50 py-1 rounded-r">
                             {React.Children.map(children, renderHighlightedNode)}
                           </h2>
                         ),
@@ -370,7 +370,7 @@ export default function DocPreviewModal({
 
                           if (isArticleHeader) {
                             return (
-                              <div className="mt-6 pt-3 pb-1 border-l-4 border-blue-600 pl-3 font-bold text-slate-900 text-base sm:text-lg bg-blue-50/50 rounded-r-lg mb-3">
+                              <div className="mt-6 pt-3 pb-1 border-l-4 border-tlu-blue pl-3 font-bold text-slate-900 text-base sm:text-lg bg-tlu-tint/50 rounded-r-lg mb-3">
                                 {React.Children.map(children, renderHighlightedNode)}
                               </div>
                             );
@@ -404,7 +404,7 @@ export default function DocPreviewModal({
                           </td>
                         ),
                         tr: ({ children }) => (
-                          <tr className="hover:bg-blue-50/40 transition-colors odd:bg-white even:bg-slate-50/40">
+                          <tr className="hover:bg-tlu-tint/40 transition-colors odd:bg-white even:bg-slate-50/40">
                             {children}
                           </tr>
                         ),
@@ -417,7 +417,7 @@ export default function DocPreviewModal({
               ) : (
                 /* Fallback download card if text extraction isn't available */
                 <div className="flex flex-col items-center justify-center h-full gap-4 text-center py-16">
-                  <div className="p-4 rounded-2xl bg-blue-50 border border-blue-100 text-blue-600">
+                  <div className="p-4 rounded-2xl bg-tlu-tint border border-tlu-tint-2 text-tlu-blue">
                     {renderFileIcon()}
                   </div>
                   <div className="max-w-md">
@@ -432,7 +432,7 @@ export default function DocPreviewModal({
                     <a
                       href={docUrl}
                       download
-                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-tlu-blue hover:bg-tlu-blue-dark rounded-xl shadow-sm transition-all"
                     >
                       <Download className="w-4 h-4" />
                       <span>Tải tài liệu về máy</span>
@@ -453,7 +453,7 @@ export default function DocPreviewModal({
               <a
                 href={docUrl}
                 download
-                className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm"
+                className="mt-2 inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-tlu-blue hover:bg-tlu-blue-dark rounded-lg shadow-sm"
               >
                 <Download className="w-3.5 h-3.5" />
                 <span>Tải tài liệu về</span>

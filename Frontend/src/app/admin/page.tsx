@@ -92,7 +92,7 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
         className="w-full max-w-sm bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-4"
       >
         <div className="flex items-center gap-2">
-          <KeyRound className="w-5 h-5 text-blue-600" />
+          <KeyRound className="w-5 h-5 text-tlu-blue" />
           <h1 className="text-lg font-bold text-slate-900">Đăng nhập quản trị</h1>
         </div>
         <p className="text-xs text-slate-500">Nhập admin key (biến ADMIN_API_KEY của backend).</p>
@@ -102,7 +102,7 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
           onChange={(e) => setKey(e.target.value)}
           autoFocus
           placeholder="Admin key"
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-tlu-blue"
         />
         {error && (
           <p className="text-xs text-red-600 flex items-center gap-1">
@@ -113,11 +113,11 @@ function AdminLogin({ onSuccess }: { onSuccess: () => void }) {
         <button
           type="submit"
           disabled={checking || !key.trim()}
-          className="w-full py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 rounded-lg"
+          className="w-full py-2 text-sm font-semibold text-white bg-tlu-blue hover:bg-tlu-blue-dark disabled:opacity-50 rounded-lg"
         >
           {checking ? "Đang kiểm tra..." : "Đăng nhập"}
         </button>
-        <Link href="/" className="block text-center text-xs text-slate-500 hover:text-blue-600">
+        <Link href="/" className="block text-center text-xs text-slate-500 hover:text-tlu-blue">
           Về phòng chat
         </Link>
       </form>
@@ -312,10 +312,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
       {/* Top Navigation */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+      <header className="sticky top-0 z-30 bg-tlu-navy border-b-[3px] border-tlu-red">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="relative w-10 h-10 flex-shrink-0 bg-blue-50 rounded-xl p-1.5 border border-blue-100 shadow-inner">
+            <div className="relative w-10 h-10 flex-shrink-0 bg-white rounded-xl p-1.5">
               <Image
                 src="/logo-tlu.png"
                 alt="Logo Đại học Thủy Lợi"
@@ -325,10 +325,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               />
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-bold text-slate-900 leading-tight">
+              <h1 className="text-base sm:text-lg font-bold text-white leading-tight">
                 Quản Trị Cơ Sở Tri Thức
               </h1>
-              <p className="text-xs text-blue-600 font-semibold">
+              <p className="text-xs text-tlu-on-navy-2 font-semibold">
                 Hệ thống StudyBot • Đại học Thủy Lợi
               </p>
             </div>
@@ -341,13 +341,13 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
               title="Làm mới dữ liệu"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-blue-600" : ""}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-tlu-blue" : ""}`} />
               Làm mới
             </button>
 
             <Link
               href="/"
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-sm transition-all"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-tlu-blue bg-white hover:bg-tlu-tint rounded-xl transition-all"
             >
               <ArrowLeft className="w-4 h-4" />
               <span>Về phòng chat</span>
@@ -369,7 +369,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {/* KPI Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-tlu-tint border border-tlu-tint-2 flex items-center justify-center text-tlu-blue flex-shrink-0">
               <FileCheck2 className="w-6 h-6" />
             </div>
             <div>
@@ -383,7 +383,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
 
           <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-tlu-tint border border-tlu-tint-2 flex items-center justify-center text-tlu-blue flex-shrink-0">
               <Globe className="w-6 h-6" />
             </div>
             <div>
@@ -397,7 +397,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
 
           <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 flex-shrink-0">
+            <div className="w-12 h-12 rounded-xl bg-tlu-tint border border-tlu-tint-2 flex items-center justify-center text-tlu-blue flex-shrink-0">
               <Layers className="w-6 h-6" />
             </div>
             <div>
@@ -426,10 +426,10 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         </div>
 
         {/* TLU Web Crawler Control Section */}
-        <div className="bg-gradient-to-br from-white via-sky-50/30 to-blue-50/20 rounded-2xl p-6 border border-sky-200/80 shadow-sm space-y-4">
+        <div className="bg-gradient-to-br from-white via-tlu-tint/30 to-tlu-tint/20 rounded-2xl p-6 border border-tlu-tint-2/80 shadow-sm space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-md shadow-sky-600/20">
+              <div className="w-10 h-10 rounded-xl bg-tlu-blue text-white flex items-center justify-center shadow-md shadow-tlu-blue/20">
                 <Globe className="w-5 h-5" />
               </div>
               <div>
@@ -437,8 +437,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   <h2 className="text-base font-bold text-slate-900">
                     Cào Thông Báo Tự Động từ Website TLU
                   </h2>
-                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700 bg-sky-100 px-2.5 py-0.5 rounded-full border border-sky-200">
-                    <Sparkles className="w-3 h-3 text-sky-600" />
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-tlu-blue-dark bg-tlu-tint-2 px-2.5 py-0.5 rounded-full border border-tlu-tint-2">
+                    <Sparkles className="w-3 h-3 text-tlu-blue" />
                     Auto Crawler
                   </span>
                 </div>
@@ -455,7 +455,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                   value={crawlLimit}
                   onChange={(e) => setCrawlLimit(Number(e.target.value))}
                   disabled={isCrawling}
-                  className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-sky-500 shadow-sm cursor-pointer"
+                  className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs font-semibold focus:outline-none focus:border-tlu-blue shadow-sm cursor-pointer"
                 >
                   <option value={3}>3 bài mới nhất</option>
                   <option value={5}>5 bài mới nhất</option>
@@ -467,7 +467,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               <button
                 onClick={handleRunCrawler}
                 disabled={isCrawling}
-                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-sky-600 hover:bg-sky-700 disabled:bg-sky-400 rounded-xl shadow-sm transition-all shadow-sky-600/20"
+                className="inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-tlu-blue hover:bg-tlu-blue-dark disabled:bg-tlu-line rounded-xl shadow-sm transition-all shadow-tlu-blue/20"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${isCrawling ? "animate-spin" : ""}`} />
                 <span>{isCrawling ? "Đang quét & nạp dữ liệu..." : "Quét thông báo ngay"}</span>
@@ -476,7 +476,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           </div>
 
           {isCrawling && (
-            <div className="space-y-1.5 p-3 rounded-xl border border-sky-200 bg-white/80 text-xs">
+            <div className="space-y-1.5 p-3 rounded-xl border border-tlu-tint-2 bg-white/80 text-xs">
               <div className="flex items-center justify-between gap-2 font-medium text-slate-700">
                 <span className="truncate">
                   {crawlJob?.current
@@ -486,14 +486,14 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                     : "Đang lấy danh sách thông báo từ tlu.edu.vn..."}
                 </span>
                 {crawlJob && crawlJob.total > 0 && (
-                  <span className="flex-shrink-0 text-sky-700">
+                  <span className="flex-shrink-0 text-tlu-blue-dark">
                     {crawlJob.done}/{crawlJob.total}
                   </span>
                 )}
               </div>
-              <div className="h-1.5 rounded-full bg-sky-100 overflow-hidden">
+              <div className="h-1.5 rounded-full bg-tlu-tint-2 overflow-hidden">
                 <div
-                  className="h-full bg-sky-600 transition-all duration-500"
+                  className="h-full bg-tlu-blue transition-all duration-500"
                   style={{
                     width: `${crawlJob && crawlJob.total > 0 ? Math.round((crawlJob.done / crawlJob.total) * 100) : 5}%`,
                   }}
@@ -520,7 +520,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
           )}
 
           {crawlerStatus && crawlerStatus.latest_announcements && crawlerStatus.latest_announcements.length > 0 && (
-            <div className="pt-2 border-t border-sky-100/80">
+            <div className="pt-2 border-t border-tlu-tint-2/80">
               <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
                 Thông báo vừa cào gần đây:
               </p>
@@ -544,7 +544,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             </div>
           )}
 
-          <div className="pt-2 border-t border-sky-100/80">
+          <div className="pt-2 border-t border-tlu-tint-2/80">
             <CrawlRunsPanel refreshKey={crawlJob?.finished_at} />
           </div>
         </div>
@@ -555,7 +555,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
         {/* Upload Zone */}
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
           <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <UploadCloud className="w-5 h-5 text-blue-600" />
+            <UploadCloud className="w-5 h-5 text-tlu-blue" />
             Tải lên tài liệu quy chế mới
           </h2>
 
@@ -573,8 +573,8 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
             onClick={() => !uploading && fileInputRef.current?.click()}
             className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer flex flex-col items-center justify-center gap-3 ${
               isDragOver
-                ? "border-blue-500 bg-blue-50/50"
-                : "border-slate-200 hover:border-blue-300 hover:bg-slate-50/70"
+                ? "border-tlu-blue bg-tlu-tint/50"
+                : "border-slate-200 hover:border-tlu-line hover:bg-slate-50/70"
             }`}
           >
             <input
@@ -586,20 +586,20 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
               disabled={uploading}
             />
 
-            <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shadow-inner">
+            <div className="w-12 h-12 rounded-full bg-tlu-tint text-tlu-blue flex items-center justify-center shadow-inner">
               <UploadCloud className="w-6 h-6" />
             </div>
 
             <div>
               <p className="text-sm font-semibold text-slate-700">
                 {uploading ? (
-                  <span className="text-blue-600 flex items-center gap-2 justify-center">
+                  <span className="text-tlu-blue flex items-center gap-2 justify-center">
                     <RefreshCw className="w-4 h-4 animate-spin" />
                     Đang phân tích, trích xuất cấu trúc văn bản và vector hoá...
                   </span>
                 ) : (
                   <>
-                    Nhấp để chọn tệp hoặc <span className="text-blue-600">kéo thả tệp vào đây</span>
+                    Nhấp để chọn tệp hoặc <span className="text-tlu-blue">kéo thả tệp vào đây</span>
                   </>
                 )}
               </p>
@@ -641,7 +641,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Tìm kiếm tài liệu..."
-                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+                className="w-full pl-9 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-tlu-blue focus:bg-white transition-colors"
               />
             </div>
           </div>
@@ -663,7 +663,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                 {loading ? (
                   <tr>
                     <td colSpan={7} className="text-center py-12 text-slate-400">
-                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
+                      <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-tlu-blue" />
                       Đang tải danh sách tài liệu...
                     </td>
                   </tr>
@@ -685,7 +685,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                             ) : ["pdf"].includes((doc.file_type || "").toLowerCase()) ? (
                               <FileText className="w-4 h-4 text-rose-500 flex-shrink-0" />
                             ) : (
-                              <FileText className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                              <FileText className="w-4 h-4 text-tlu-blue flex-shrink-0" />
                             )}
                             <span className="truncate" title={doc.original_name}>
                               {doc.original_name}
@@ -699,7 +699,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                         </td>
                         <td className="px-4 py-3.5 text-slate-500">{formatFileSize(doc.file_size)}</td>
                         <td className="px-4 py-3.5">
-                          <span className="font-semibold text-indigo-600">
+                          <span className="font-semibold text-tlu-blue">
                             {doc.chunk_count || 0}
                           </span>
                         </td>
@@ -736,7 +736,7 @@ function AdminDashboard({ onLogout }: { onLogout: () => void }) {
                                   fileName: doc.file_type ? `${doc.filename}.${doc.file_type}` : doc.original_name,
                                 })
                               }
-                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="p-1.5 text-slate-400 hover:text-tlu-blue hover:bg-tlu-tint rounded-lg transition-colors"
                               title="Xem trước tài liệu"
                             >
                               <Eye className="w-4 h-4" />

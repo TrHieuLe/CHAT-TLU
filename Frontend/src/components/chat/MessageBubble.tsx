@@ -17,8 +17,8 @@ import {
   ThumbsUp,
   ThumbsDown,
   RotateCcw,
-  Sparkles,
   Eye,
+  FileText,
 } from "lucide-react";
 import { buildDocumentReferenceUrl, sendFeedback, toAbsoluteApiUrl } from "@/lib/api";
 import { getSmartFollowups } from "@/lib/followups";
@@ -97,45 +97,28 @@ export default function MessageBubble({
         isUser ? "flex-row-reverse" : "flex-row"
       )}
     >
-      {/* --- AVATAR --- */}
-      <div
-        className={clsx(
-          "flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shadow-sm",
-          isUser
-            ? "bg-blue-100 text-blue-700" // Avatar SV
-            : "bg-white border border-slate-200 text-xl shadow-sm" // Avatar Bot
-        )}
-      >
-        {isUser ? "SV" : "🤖"}
-      </div>
+      {/* --- AVATAR: chỉ hiện cho StudyBot (khiên TLU) --- */}
+      {!isUser && (
+        <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-white border border-tlu-tint-2 flex items-center justify-center">
+          <img src="/logo-tlu.png" alt="StudyBot" width={22} height={29} className="w-[22px] h-[29px] object-contain" />
+        </div>
+      )}
 
       {/* --- NỘI DUNG TIN NHẮN --- */}
-      <div className="max-w-[85%] space-y-2">
+      <div className={clsx("space-y-3 min-w-0", isUser ? "max-w-[80%] md:max-w-[72%]" : "flex-1 max-w-full")}>
         <div
           className={clsx(
-            "px-5 py-4 text-sm md:text-base shadow-sm",
+            "text-[15px]",
             isUser
-              // STYLE TIN NHẮN USER: Nền xanh dương đậm, chữ trắng, bo góc đẹp
-              ? "bg-blue-600 text-white rounded-3xl rounded-tr-sm border border-blue-700"
-              // STYLE TIN NHẮN BOT: Nền trắng, chữ xám đen, bo góc mềm mại
-              : "bg-white text-slate-800 rounded-3xl rounded-tl-sm border border-slate-100"
+              ? "px-4 py-3 bg-tlu-blue text-white rounded-[18px] rounded-br-[4px]"
+              : "px-5 py-4 md:px-[22px] md:py-5 bg-white text-slate-800 rounded-[18px] rounded-tl-[4px] border border-tlu-border"
           )}
         >
           {isUser ? (
             <div>
-              {msg.content?.trim() && (
-                <p className="leading-relaxed whitespace-pre-wrap break-words">
-                  {msg.content}
-                </p>
-              )}
-
               {imageUrls.length > 0 && (
-                <div className="mt-3 space-y-3">
-                  <div className="flex items-center gap-1.5 text-xs text-blue-100 opacity-90">
-                    <ImageIcon className="w-4 h-4" />
-                    <span>Ảnh bạn đã gửi</span>
-                  </div>
-                  <div className="grid gap-3">
+                <div className="mb-3 space-y-2">
+                  <div className="grid gap-2">
                     {imageUrls.map((url, idx) => (
                       <Img
                         key={`${url}-${idx}`}
@@ -145,7 +128,16 @@ export default function MessageBubble({
                       />
                     ))}
                   </div>
+                  <div className="flex items-center gap-1.5 text-xs text-white/80">
+                    <ImageIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Ảnh bạn đã gửi</span>
+                  </div>
                 </div>
+              )}
+              {msg.content?.trim() && (
+                <p className="leading-relaxed whitespace-pre-wrap break-words">
+                  {msg.content}
+                </p>
               )}
             </div>
           ) : (
@@ -154,10 +146,10 @@ export default function MessageBubble({
 
               {imageUrls.length > 0 && (
                 <div className="mt-4 space-y-3">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-                    <ImageIcon className="w-4 h-4 text-blue-500" />
-                    <span>Hình ảnh liên quan</span>
-                  </div>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tlu-tint text-tlu-blue-dark text-xs font-semibold">
+                    <ImageIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                    Ảnh liên quan
+                  </span>
 
                   <div className="grid gap-3">
                     {imageUrls.map((url, idx) => (
@@ -173,69 +165,74 @@ export default function MessageBubble({
               )}
 
               {msg.isStreaming && (
-                <span className="inline-block w-2.5 h-4 bg-blue-500 animate-pulse ml-1 rounded-sm align-text-bottom" />
+                <span className="inline-block w-2.5 h-4 bg-tlu-blue animate-pulse ml-1 rounded-sm align-text-bottom" />
               )}
             </div>
           )}
         </div>
 
-        {/* --- HIỂN THỊ NGUỒN (SOURCES) --- */}
+        {/* --- NGUỒN THAM KHẢO --- */}
         {!isUser && sources.length > 0 && (
-          <div className="mt-1 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
-            <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-blue-700">
-              <BookOpen className="h-3.5 w-3.5 flex-shrink-0" />
+          <section aria-label="Nguồn tham khảo" className="space-y-2">
+            <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.06em] text-tlu-muted">
+              <BookOpen className="h-3.5 w-3.5" aria-hidden="true" />
               <span>Nguồn tham khảo</span>
             </div>
 
-            <ul className="space-y-1.5">
+            <ul className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
               {sources.map((source) => (
-                <li key={source.key} className="flex items-center justify-between gap-2">
-                  <a
-                    href={source.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group inline-flex items-start gap-2 text-xs text-slate-600 transition-colors hover:text-blue-700 min-w-0"
-                    title={`Mở tài liệu ${source.title}`}
-                  >
-                    <span className="break-all italic underline decoration-slate-300 underline-offset-2 group-hover:decoration-blue-500">
-                      {source.title}
-                    </span>
-                    <ExternalLink className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-                  </a>
-
-                  {onPreviewDocument && (
-                    <button
-                      onClick={() => onPreviewDocument(source.href, source.title)}
-                      className="inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-md transition-colors flex-shrink-0 border border-blue-200 bg-white"
-                      title="Xem nhanh trong trang"
+                <li key={source.key} className="flex flex-col gap-1.5 p-3 rounded-xl border border-tlu-tint-2 bg-white min-w-0">
+                  <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-tlu-blue">
+                    <FileText className="w-3.5 h-3.5" aria-hidden="true" />
+                    {fileKind(source.title)}
+                  </span>
+                  <span className="text-[13px] font-semibold leading-snug text-tlu-ink break-words line-clamp-2" title={source.title}>
+                    {prettySourceTitle(source.title)}
+                  </span>
+                  <div className="flex items-center gap-3 pt-0.5">
+                    {onPreviewDocument && (
+                      <button
+                        onClick={() => onPreviewDocument(source.href, source.title)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-tlu-blue hover:text-tlu-blue-dark"
+                      >
+                        <Eye className="w-3.5 h-3.5" aria-hidden="true" />
+                        Xem trước
+                      </button>
+                    )}
+                    <a
+                      href={source.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-medium text-tlu-muted hover:text-tlu-blue"
+                      aria-label={`Mở ${source.title} trong tab mới`}
                     >
-                      <Eye className="w-3 h-3" />
-                      <span>Xem trước</span>
-                    </button>
-                  )}
+                      <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                      Mở
+                    </a>
+                  </div>
                 </li>
               ))}
             </ul>
-          </div>
+          </section>
         )}
 
-        {/* --- THANH CÔNG CỤ TƯƠNG TÁC BOT (ACTION TOOLBAR) --- */}
+        {/* --- THANH CÔNG CỤ --- */}
         {!isUser && !msg.isStreaming && msg.content && (
-          <div className="flex items-center gap-1 mt-1 px-1">
+          <div className="flex flex-wrap items-center gap-1 -ml-1">
             <button
               onClick={handleCopy}
-              className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-slate-700 hover:bg-slate-200/60 p-1.5 rounded-lg transition-colors"
+              className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-[13px] text-slate-600 hover:text-tlu-ink hover:bg-tlu-tint transition-colors"
               title="Sao chép câu trả lời"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-emerald-600 text-[11px] font-medium">Đã chép</span>
+                  <Check className="w-4 h-4 text-emerald-700" />
+                  <span className="text-emerald-700 font-medium">Đã chép</span>
                 </>
               ) : (
                 <>
-                  <Copy className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline text-[11px]">Sao chép</span>
+                  <Copy className="w-4 h-4" />
+                  <span>Sao chép</span>
                 </>
               )}
             </button>
@@ -243,65 +240,75 @@ export default function MessageBubble({
             <button
               onClick={() => handleFeedback("like")}
               className={clsx(
-                "p-1.5 rounded-lg text-xs transition-colors",
-                feedback === "like"
-                  ? "text-emerald-600 bg-emerald-50"
-                  : "text-slate-400 hover:text-emerald-600 hover:bg-slate-200/60"
+                "w-9 h-9 rounded-lg flex items-center justify-center transition-colors",
+                feedback === "like" ? "text-tlu-blue bg-tlu-tint" : "text-slate-600 hover:text-tlu-blue hover:bg-tlu-tint"
               )}
+              aria-label="Câu trả lời hữu ích"
+              aria-pressed={feedback === "like"}
               title="Câu trả lời hữu ích"
             >
-              <ThumbsUp className="w-3.5 h-3.5" />
+              <ThumbsUp className="w-4 h-4" />
             </button>
 
             <button
               onClick={() => handleFeedback("dislike")}
               className={clsx(
-                "p-1.5 rounded-lg text-xs transition-colors",
-                feedback === "dislike"
-                  ? "text-rose-600 bg-rose-50"
-                  : "text-slate-400 hover:text-rose-600 hover:bg-slate-200/60"
+                "w-9 h-9 rounded-lg flex items-center justify-center transition-colors",
+                feedback === "dislike" ? "text-tlu-red bg-red-50" : "text-slate-600 hover:text-tlu-red hover:bg-red-50"
               )}
+              aria-label="Câu trả lời chưa chính xác"
+              aria-pressed={feedback === "dislike"}
               title="Câu trả lời chưa chính xác"
             >
-              <ThumbsDown className="w-3.5 h-3.5" />
+              <ThumbsDown className="w-4 h-4" />
             </button>
 
             {isLast && onRegenerate && (
               <button
                 onClick={onRegenerate}
-                className="inline-flex items-center gap-1 text-xs text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors ml-1"
+                className="inline-flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-[13px] text-slate-600 hover:text-tlu-blue hover:bg-tlu-tint transition-colors"
                 title="Tạo lại câu trả lời"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline text-[11px]">Tạo lại</span>
+                <RotateCcw className="w-4 h-4" />
+                <span>Tạo lại</span>
               </button>
             )}
           </div>
         )}
 
-        {/* --- GỢI Ý CÂU HỎI TIẾP THEO (FOLLOW-UP CHIPS) --- */}
+        {/* --- GỢI Ý CÂU HỎI TIẾP THEO --- */}
         {followups.length > 0 && onSuggestionClick && (
-          <div className="mt-3 space-y-1.5 animate-fade-up">
-            <div className="flex items-center gap-1 text-xs text-slate-400 font-medium px-1">
-              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Gợi ý câu hỏi liên quan:</span>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {followups.map((chip, idx) => (
-                <button
-                  key={idx}
-                  onClick={() => onSuggestionClick(chip)}
-                  className="text-xs text-left bg-white hover:bg-blue-50 hover:text-blue-700 text-slate-700 px-3 py-1.5 rounded-xl border border-slate-200 hover:border-blue-300 transition-all shadow-xs group flex items-center gap-1.5"
-                >
-                  <span>{chip}</span>
-                </button>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-2 animate-fade-up" aria-label="Gợi ý câu hỏi tiếp theo">
+            {followups.map((chip, idx) => (
+              <button
+                key={idx}
+                onClick={() => onSuggestionClick(chip)}
+                className="inline-flex items-center min-h-9 px-3.5 py-1.5 rounded-full border border-tlu-tint-2 bg-tlu-tint text-tlu-blue-dark text-[13px] font-medium text-left hover:bg-tlu-tint-2 transition-colors"
+              >
+                {chip}
+              </button>
+            ))}
           </div>
         )}
       </div>
     </div>
   );
+}
+
+/** Nhãn loại tài liệu theo đuôi file */
+function fileKind(title: string) {
+  const ext = (title.split(".").pop() || "").toLowerCase();
+  if (ext === "pdf") return "PDF";
+  if (ext === "docx" || ext === "doc") return "Văn bản Word";
+  if (ext === "xlsx" || ext === "xls" || ext === "csv") return "Bảng tính";
+  if (ext === "md") return "Thông báo";
+  if (ext === "txt") return "Tóm tắt";
+  return "Tài liệu";
+}
+
+/** Tên hiển thị gọn: bỏ đuôi file, thay gạch dưới bằng khoảng trắng */
+function prettySourceTitle(title: string) {
+  return title.replace(/\.(pdf|docx?|xlsx?|csv|md|txt)$/i, "").replace(/_/g, " ").trim() || title;
 }
 
 // ==========================================
@@ -397,7 +404,7 @@ function MD({ content }: { content: string }) {
             );
           }
           return (
-            <code className="px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-100 text-[0.85em] font-mono">
+            <code className="px-1.5 py-0.5 rounded bg-tlu-tint text-tlu-blue-dark border border-tlu-tint-2 text-[0.85em] font-mono">
               {children}
             </code>
           );
@@ -406,36 +413,36 @@ function MD({ content }: { content: string }) {
           return <Img src={src || ""} alt={alt || "Hình minh họa"} userImage={false} />;
         },
         table: ({ children }) => (
-          <div className="overflow-x-auto rounded-xl border border-slate-200 my-4 shadow-sm">
+          <div className="overflow-x-auto rounded-xl border border-tlu-border my-4">
             <table className="w-full text-sm text-left">{children}</table>
           </div>
         ),
         thead: ({ children }) => (
-          <thead className="bg-slate-50 text-slate-700 border-b border-slate-200">{children}</thead>
+          <thead className="bg-tlu-tint text-tlu-blue-dark">{children}</thead>
         ),
         th: ({ children }) => (
-          <th className="px-4 py-3 font-semibold text-slate-800 align-top">
+          <th className="px-4 py-2.5 font-semibold text-tlu-blue-dark align-top">
             {children}
           </th>
         ),
         td: ({ children }) => (
-          <td className="px-4 py-3 border-t border-slate-100 text-slate-700 align-top whitespace-pre-wrap break-words">
+          <td className="px-4 py-2.5 border-t border-tlu-border text-slate-800 align-top whitespace-pre-wrap break-words">
             {children}
           </td>
         ),
-        h1: ({ children }) => <h1 className="text-xl font-bold text-blue-800 mt-6 mb-3">{children}</h1>,
-        h2: ({ children }) => <h2 className="text-lg font-bold text-blue-700 mt-5 mb-2">{children}</h2>,
+        h1: ({ children }) => <h1 className="text-xl font-bold text-tlu-navy mt-6 mb-3">{children}</h1>,
+        h2: ({ children }) => <h2 className="text-lg font-bold text-tlu-navy mt-5 mb-2">{children}</h2>,
         h3: ({ children }) => <h3 className="text-base font-semibold text-slate-800 mt-4 mb-2">{children}</h3>,
         ul: ({ children }) => <ul className="list-disc list-outside ml-5 space-y-1.5 my-3 text-slate-700">{children}</ul>,
         ol: ({ children }) => <ol className="list-decimal list-outside ml-5 space-y-1.5 my-3 text-slate-700">{children}</ol>,
         li: ({ children }) => <li className="pl-1">{children}</li>,
         blockquote: ({ children }) => (
-          <blockquote className="border-l-4 border-blue-400 pl-4 py-1 my-4 italic text-slate-600 bg-sky-50 rounded-r-lg">
+          <blockquote className="pl-4 pr-3 py-2 my-4 text-slate-700 bg-tlu-tint rounded-lg">
             {children}
           </blockquote>
         ),
         p: ({ children }) => (
-          <p className="my-2 leading-relaxed text-slate-700 whitespace-pre-wrap break-words">
+          <p className="my-2 leading-[1.65] text-slate-800 whitespace-pre-wrap break-words">
             {children}
           </p>
         ),
@@ -445,7 +452,7 @@ function MD({ content }: { content: string }) {
         a: ({ href, children }) => (
           <a
             href={href} target="_blank" rel="noopener noreferrer"
-            className="text-blue-600 font-medium hover:text-blue-800 underline underline-offset-2 transition-colors"
+            className="text-tlu-blue font-medium hover:text-tlu-blue-dark underline underline-offset-2 transition-colors"
           >
             {children}
           </a>
@@ -595,7 +602,7 @@ function CopyBtn({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
       }}
-      className="text-xs text-slate-500 hover:text-blue-600 font-medium transition-colors bg-white px-2 py-1 rounded shadow-sm border border-slate-200"
+      className="text-xs text-slate-600 hover:text-tlu-blue font-medium transition-colors bg-white px-2 py-1 rounded border border-tlu-border"
     >
       {copied ? "✓ Đã copy" : "Copy"}
     </button>
@@ -608,9 +615,9 @@ function Img({ src, alt, userImage = false }: { src: string; alt: string; userIm
 
   if (err) {
     return (
-      <div className="my-3 rounded-2xl border border-red-100 bg-red-50 p-6 text-center">
-        <div className="text-2xl mb-2 opacity-50">🖼️</div>
-        <p className="text-xs text-red-400 italic">Không thể tải ảnh: {alt}</p>
+      <div className="my-2 rounded-xl border border-tlu-border bg-tlu-ground p-5 text-center text-slate-600">
+        <ImageIcon className="w-6 h-6 mx-auto mb-2 text-tlu-muted" aria-hidden="true" />
+        <p className="text-xs">Không tải được ảnh: {alt}</p>
       </div>
     );
   }
@@ -618,7 +625,7 @@ function Img({ src, alt, userImage = false }: { src: string; alt: string; userIm
   return (
     <figure className="my-3 relative">
       {!loaded && (
-        <div className="rounded-2xl bg-slate-100 border border-slate-200 animate-pulse w-full" style={{ height: "200px" }} />
+        <div className="rounded-xl bg-tlu-tint border border-tlu-border animate-pulse w-full" style={{ height: "200px" }} />
       )}
       <img
         src={src}
@@ -627,14 +634,14 @@ function Img({ src, alt, userImage = false }: { src: string; alt: string; userIm
         onLoad={() => setLoaded(true)}
         loading="lazy"
         className={clsx(
-          "rounded-2xl w-full border border-slate-200 transition-opacity duration-300 shadow-sm",
+          "rounded-xl w-full border border-tlu-border transition-opacity duration-300",
           loaded ? "opacity-100" : "opacity-0 absolute top-0 left-0",
           userImage ? "object-contain bg-white" : "object-cover"
         )}
         style={{ maxHeight: "400px" }}
       />
       {alt && loaded && !userImage && (
-        <figcaption className="text-xs text-slate-400 text-center mt-2 italic font-medium">
+        <figcaption className="text-xs text-tlu-muted text-center mt-2">
           {alt}
         </figcaption>
       )}

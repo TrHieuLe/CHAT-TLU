@@ -23,18 +23,32 @@
 
 /* Tùy chỉnh màu khi bôi đen văn bản (Selection) */
 ::selection {
-  background: rgba(59, 130, 246, 0.2); /* Nền xanh dương nhạt (blue-500 / 20%) */
-  color: #0f172a; /* Chữ màu đậm (slate-900) để dễ đọc */
+  background: rgba(26, 72, 150, 0.18); /* xanh TLU nhạt */
+  color: #0f172a;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* Đặt nền mặc định là màu sáng (sky-50) và chữ màu xám đậm (slate-800) */
+/* Nền xám xanh nhạt, chữ đậm — theo nhận diện TLU */
 body {
-  background-color: #f0f9ff; 
-  color: #1e293b; 
+  background-color: #f4f6fb;
+  color: #0f172a;
+}
+
+/* Viền focus rõ ràng cho điều hướng bằng bàn phím */
+:focus-visible {
+  outline: 2px solid #1a4896;
+  outline-offset: 2px;
+}
+
+/* Thanh cuộn trên nền xanh đậm của sidebar */
+.scrollbar-navy::-webkit-scrollbar-thumb {
+  background: #26477f;
+}
+.scrollbar-navy::-webkit-scrollbar-thumb:hover {
+  background: #3a5a94;
 }
 
 /* --- Các hiệu ứng Animation --- */
