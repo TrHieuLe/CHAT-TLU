@@ -253,6 +253,78 @@ export async function streamChat(
   onDone();
 }
 
+// ─── Giọng nói: TTS (edge-tts) và STT dự phòng (faster-whisper) ───
+export interface VoiceOption {
+  id: string;
+  label: string;
+}
+
+export interface VoiceConfig {
+  tts_enabled: boolean;
+  stt_enabled: boolean;
+  default_voice: string;
+  voices: VoiceOption[];
+  rate_min: number;
+  rate_max: number;
+  stt_max_seconds: number;
+}
+
+let voiceConfigPromise: Promise<VoiceConfig | null> | null = null;
+
+/** Cấu hình giọng nói từ backend; gọi một lần rồi dùng lại cho cả app. */
+export function getVoiceConfig(): Promise<VoiceConfig | null> {
+  if (!voiceConfigPromise) {
+    voiceConfigPromise = fetch(`${API_BASE}/api/voice/config`, {
+      headers: { "X-User-ID": getUserId() },
+    })
+      .then((r) => (r.ok ? (r.json() as Promise<VoiceConfig>) : null))
+      .catch(() => null)
+      .then((cfg) => {
+        if (!cfg) voiceConfigPromise = null; // backend chưa chạy: lần sau thử lại
+        return cfg;
+      });
+  }
+  return voiceConfigPromise;
+}
+
+async function errorDetail(r: Response, fallback: string): Promise<string> {
+  try {
+    const body = await r.json();
+    if (typeof body?.detail === "string") return body.detail;
+  } catch {}
+  return fallback;
+}
+
+export async function synthesizeSpeech(
+  text: string,
+  voice?: string,
+  rate = 0,
+  signal?: AbortSignal
+): Promise<Blob> {
+  const r = await fetch(`${API_BASE}/api/voice/tts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-User-ID": getUserId() },
+    body: JSON.stringify({ text, voice, rate }),
+    signal,
+  });
+  if (!r.ok) throw new Error(await errorDetail(r, "Không đọc được câu trả lời"));
+  return r.blob();
+}
+
+export async function transcribeAudio(audio: Blob): Promise<string> {
+  const ext = audio.type.includes("mp4") ? "m4a" : audio.type.includes("ogg") ? "ogg" : "webm";
+  const form = new FormData();
+  form.append("audio", audio, `recording.${ext}`);
+  const r = await fetch(`${API_BASE}/api/voice/stt`, {
+    method: "POST",
+    headers: { "X-User-ID": getUserId() },
+    body: form,
+  });
+  if (!r.ok) throw new Error(await errorDetail(r, "Không nhận dạng được giọng nói"));
+  const body = await r.json();
+  return typeof body?.text === "string" ? body.text : "";
+}
+
 import type {
   DocumentItem,
   DocumentStats,

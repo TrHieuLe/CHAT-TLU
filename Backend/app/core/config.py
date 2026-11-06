@@ -90,5 +90,21 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 20         # số câu hỏi / phút / (IP + user), 0 = tắt
     MAX_UPLOAD_MB: int = 50
 
+    # Giọng nói — TTS (edge-tts, gửi câu trả lời của bot lên dịch vụ Microsoft để đọc)
+    TTS_ENABLED: bool = True
+    TTS_DEFAULT_VOICE: str = "vi-VN-HoaiMyNeural"
+    TTS_MAX_CHARS: int = 3000               # cắt bớt văn bản đọc (theo ranh giới câu)
+    TTS_CACHE_DIR: str = "./app/data/tts_cache"
+    TTS_CACHE_MAX_MB: int = 200
+    TTS_TIMEOUT_SECONDS: float = 30.0
+    # Giọng nói — STT dự phòng (faster-whisper chạy local, cho trình duyệt không có Web Speech)
+    STT_ENABLED: bool = True
+    STT_MODEL: str = "small"                # tiny | base | small | medium | large-v3 hoặc đường dẫn
+    STT_DEVICE: str = "cpu"
+    STT_COMPUTE_TYPE: str = "int8"
+    STT_MAX_MB: int = 10
+    STT_MAX_SECONDS: int = 60
+    VOICE_RATE_LIMIT_PER_MINUTE: int = 30   # request TTS/STT / phút / (IP + user), 0 = tắt
+
 
 settings = Settings()

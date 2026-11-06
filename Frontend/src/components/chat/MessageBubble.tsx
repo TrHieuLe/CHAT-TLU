@@ -19,7 +19,11 @@ import {
   RotateCcw,
   Eye,
   FileText,
+  Volume2,
+  Pause,
+  Loader2,
 } from "lucide-react";
+import { speechKeyFor, useTTS } from "@/components/voice/TTSProvider";
 import { buildDocumentReferenceUrl, sendFeedback, toAbsoluteApiUrl } from "@/lib/api";
 import { getSmartFollowups } from "@/lib/followups";
 import clsx from "clsx";
@@ -71,6 +75,17 @@ export default function MessageBubble({
       })
       .filter(Boolean);
   }, [msg.images]);
+
+  const tts = useTTS();
+  const speechKey = speechKeyFor(msg);
+  const isSpeaking = !!tts && tts.activeKey === speechKey && tts.status !== "idle";
+  const speechLabel = !isSpeaking
+    ? "Nghe"
+    : tts?.status === "loading"
+      ? "Đang tải…"
+      : tts?.status === "paused"
+        ? "Đọc tiếp"
+        : "Tạm dừng";
 
   const handleCopy = async () => {
     if (!msg.content) return;
@@ -236,6 +251,28 @@ export default function MessageBubble({
                 </>
               )}
             </button>
+
+            {tts?.available && (
+              <button
+                onClick={() => tts.play(speechKey, msg.content)}
+                className={clsx(
+                  "inline-flex items-center gap-1.5 h-9 px-2.5 rounded-lg text-[13px] transition-colors",
+                  isSpeaking ? "text-tlu-blue bg-tlu-tint" : "text-slate-600 hover:text-tlu-ink hover:bg-tlu-tint"
+                )}
+                title={speechLabel}
+                aria-label={speechLabel}
+                aria-pressed={isSpeaking}
+              >
+                {tts.activeKey === speechKey && tts.status === "loading" ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : tts.activeKey === speechKey && tts.status === "playing" ? (
+                  <Pause className="w-4 h-4" />
+                ) : (
+                  <Volume2 className="w-4 h-4" />
+                )}
+                <span>{speechLabel}</span>
+              </button>
+            )}
 
             <button
               onClick={() => handleFeedback("like")}

@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState, KeyboardEvent, ChangeEvent, ClipboardEvent } from "react";
 import { useVoiceInput } from "@/hooks/useVoiceInput";
-import { ArrowUp, Mic, MicOff, Loader2, Image as ImageIcon, X } from "lucide-react";
+import { ArrowUp, Mic, MicOff, Loader2, Image as ImageIcon, X, AudioLines } from "lucide-react";
 import clsx from "clsx";
 
 interface Props {
@@ -9,15 +9,27 @@ interface Props {
   onSendImage: (file: File, prompt?: string) => void;
   loading: boolean;
   hasDocs: boolean;
+  /** Chế độ hội thoại giọng nói (nghe → trả lời → đọc to → nghe tiếp) */
+  voiceModeSupported?: boolean;
+  voiceModeActive?: boolean;
+  onStartVoiceMode?: () => void;
 }
 
-export default function ChatInput({ onSend, onSendImage, loading, hasDocs }: Props) {
+export default function ChatInput({
+  onSend,
+  onSendImage,
+  loading,
+  hasDocs,
+  voiceModeSupported,
+  voiceModeActive,
+  onStartVoiceMode,
+}: Props) {
   const [val, setVal] = useState("");
   const [pickedImage, setPickedImage] = useState<File | null>(null);
   const ref = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const { listening, supported, interim, start, stop } = useVoiceInput(
+  const { listening, transcribing, supported, interim, error: voiceError, start, stop } = useVoiceInput(
     (final) => setVal((p) => (p ? p + " " + final : final).trim())
   );
 
@@ -111,6 +123,17 @@ export default function ChatInput({ onSend, onSendImage, loading, hasDocs }: Pro
         </div>
       )}
 
+      {transcribing && (
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-tlu-tint border border-tlu-tint-2 rounded-xl animate-fade-up">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-tlu-blue" />
+          <span className="text-xs text-tlu-blue-dark font-medium">Đang nhận dạng giọng nói…</span>
+        </div>
+      )}
+
+      {voiceError && !listening && !transcribing && (
+        <p className="px-3 text-xs text-tlu-red">{voiceError}</p>
+      )}
+
       {pickedImage && (
         <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl border border-tlu-tint-2 bg-tlu-tint animate-fade-up">
           <div className="flex items-center gap-2 min-w-0">
@@ -191,10 +214,26 @@ export default function ChatInput({ onSend, onSendImage, loading, hasDocs }: Pro
           className="flex-1 min-w-0 bg-transparent resize-none outline-none text-[15px] text-tlu-ink placeholder:text-slate-500 leading-6 max-h-40 py-2.5 px-1 disabled:opacity-60"
         />
 
-        {supported && (
+        {voiceModeSupported && onStartVoiceMode && !voiceModeActive && (
+          <button
+            type="button"
+            onClick={() => {
+              if (listening) stop();
+              onStartVoiceMode();
+            }}
+            disabled={loading}
+            title="Hội thoại bằng giọng nói: hỏi bằng lời, StudyBot đọc câu trả lời"
+            aria-label="Bật chế độ hội thoại giọng nói"
+            className="flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-colors text-slate-600 hover:text-tlu-blue hover:bg-tlu-tint disabled:opacity-50"
+          >
+            <AudioLines className="w-5 h-5" />
+          </button>
+        )}
+
+        {supported && !voiceModeActive && (
           <button
             onClick={() => (listening ? stop() : start())}
-            disabled={loading}
+            disabled={loading || transcribing}
             title={listening ? "Dừng ghi âm" : "Nhập bằng giọng nói"}
             aria-label={listening ? "Dừng ghi âm" : "Nhập bằng giọng nói"}
             className={clsx(

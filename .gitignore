@@ -28,6 +28,7 @@ chroma_db/
 Backend/data/crawled/
 Backend/data/images/uploads/
 Backend/app/data/images/uploads/
+Backend/app/data/tts_cache/
 Backend/data/tmp_*
 Backend/scripts/.cache/
 Backend/chat_response.txt

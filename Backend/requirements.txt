@@ -24,3 +24,7 @@ beautifulsoup4>=4.12.0
 httpx>=0.27.0
 Pillow>=10.0.0
 sentence-transformers>=3.0.0
+edge-tts>=7.0
+faster-whisper>=1.1
+# faster-whisper 1.2.x gọi av.open(metadata_errors=...) — PyAV >=16 đã bỏ tham số này
+av>=12,<16

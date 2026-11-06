@@ -45,6 +45,21 @@ The system follows a fully decoupled architecture between Frontend and Backend t
 - **Server-Sent Events (SSE) Client**: Receives streaming responses from the Backend to deliver real-time display effects.
 - **Web Speech API**: Integrates the browser's native Speech-to-Text engine to support voice input.
 
+### 5. Voice (TTS, hands-free mode, STT fallback)
+- **Read answers aloud**: the "Nghe" button on each answer calls `POST /api/voice/tts`. The backend turns the Markdown into speakable Vietnamese text (`app/voice/tts_normalizer.py`):
+  - it reads short tables row by row and skips long ones
+  - it reads `%`, `đ`/`VNĐ` and dates aloud
+  - it expands TLU abbreviations
+  - it then synthesises speech with **edge-tts** (voices `vi-VN-HoaiMyNeural` / `vi-VN-NamMinhNeural`) and caches the mp3 in `app/data/tts_cache/`.
+- **Privacy:** edge-tts sends the *bot's answer text* to Microsoft's online speech service, so it needs Internet access. User questions and profile data are never sent. Set `TTS_ENABLED=false` to turn it off; the frontend then falls back to the browser's own `speechSynthesis` voice, which it also uses when the backend is slow or fails.
+- **Hands-free conversation mode** (the waveform button next to the mic) runs a loop: listen → send → wait for the streamed answer → read it aloud → listen again.
+  - The mic is off while the bot is speaking, so it doesn't pick up the speaker.
+  - Press Esc or Dừng to exit.
+- **Server STT fallback**: browsers without the Web Speech API (Firefox, some Safari versions) record with `MediaRecorder` and send the audio to `POST /api/voice/stt`, which runs **faster-whisper** locally.
+  - The default model is `STT_MODEL=small`, on CPU with int8. It is downloaded on first use.
+  - Uploads are checked by magic bytes, size (`STT_MAX_MB`) and duration (`STT_MAX_SECONDS`).
+- Voice endpoints have their own rate-limit bucket (`VOICE_RATE_LIMIT_PER_MINUTE`), so listening to answers doesn't use up the chat quota.
+
 ## Project Directory Structure
 
 ```text

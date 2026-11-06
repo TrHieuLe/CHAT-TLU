@@ -7,6 +7,10 @@ import { useChat } from '@/hooks/useChat';
 import MessageBubble from '@/components/chat/MessageBubble';
 import ChatInput from '@/components/chat/ChatInput';
 import DocPreviewModal from '@/components/chat/DocPreviewModal';
+import VoiceModeBar from '@/components/voice/VoiceModeBar';
+import { TTSContext } from '@/components/voice/TTSProvider';
+import { useTTSPlayer } from '@/hooks/useTTSPlayer';
+import { useVoiceConversation } from '@/hooks/useVoiceConversation';
 import {
   createSession,
   getSessions,
@@ -79,6 +83,15 @@ export default function Home() {
   const [sessionId, setSessionId] = useState('');
   const { messages, send, sendImage, regenerate, loading, clear, load } = useChat(sessionId);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const tts = useTTSPlayer();
+  const conversation = useVoiceConversation({ messages, loading, send, tts });
+
+  // Đổi/tạo phiên chat: thoát chế độ hội thoại và dừng đọc
+  const exitVoiceRef = useRef(conversation.exit);
+  exitVoiceRef.current = conversation.exit;
+  useEffect(() => {
+    exitVoiceRef.current();
+  }, [sessionId]);
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDesktopSidebarOpen, setIsDesktopSidebarOpen] = useState(true);
@@ -241,6 +254,7 @@ export default function Home() {
   );
 
   return (
+    <TTSContext.Provider value={tts}>
     <div className="h-screen bg-tlu-ground text-tlu-ink flex overflow-hidden">
       {isMobileSidebarOpen && (
         <div
@@ -585,11 +599,31 @@ export default function Home() {
 
         <footer className="px-3 md:px-6 pt-2 pb-3 md:pb-5 bg-tlu-ground">
           <div className="max-w-[820px] mx-auto space-y-2">
+            {!conversation.active && conversation.micError && (
+              <p role="status" className="px-3 text-xs text-tlu-red">
+                {conversation.micError}
+              </p>
+            )}
+            {conversation.active && (
+              <VoiceModeBar
+                state={conversation.state}
+                interim={conversation.interim}
+                transcribing={conversation.transcribing}
+                error={conversation.error}
+                tts={tts}
+                onExit={conversation.exit}
+                onInterrupt={conversation.interrupt}
+                onStopListening={conversation.stopListening}
+              />
+            )}
             <ChatInput
               onSend={send}
               onSendImage={sendImage}
               loading={loading}
               hasDocs={true}
+              voiceModeSupported={conversation.supported && tts.available}
+              voiceModeActive={conversation.active}
+              onStartVoiceMode={conversation.start}
             />
             <p className="text-center text-xs text-tlu-muted">
               StudyBot có thể nhầm. Hãy đối chiếu văn bản gốc hoặc liên hệ Phòng Đào tạo (024.38522201).
@@ -605,5 +639,6 @@ export default function Home() {
         docUrl={previewDoc.url}
       />
     </div>
+    </TTSContext.Provider>
   );
 }

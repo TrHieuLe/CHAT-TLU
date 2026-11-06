@@ -9,7 +9,7 @@ from pathlib import Path
 from app.core.config import settings
 from app.models.database import init_db
 from app.rag.qdrant_client_custom import qdrant_client
-from app.routers import admin, chat, sessions, document, memory, crawler
+from app.routers import admin, chat, sessions, document, memory, crawler, voice
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "-1")
@@ -113,6 +113,7 @@ app.include_router(document.router)
 app.include_router(memory.router)
 app.include_router(crawler.router)
 app.include_router(admin.router)
+app.include_router(voice.router)
 
 
 @app.get("/")
